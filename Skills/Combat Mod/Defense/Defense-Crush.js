@@ -8,13 +8,22 @@
 		return CrushIt1.call(this, active, passive, skill, keyword);
 	};
 	
-	var CrushIt2 = DamageCalculator.calculateDefense;
-	DamageCalculator.calculateDefense = function(active, passive, weapon, isCritical, totalStatus, trueHitValue) {
-		var def = CrushIt2.call(this,active,passive,weapon,isCritical,totalStatus,trueHitValue);
-		var Skill = SkillControl.getPossessionCustomSkill(active,"Bypass");
-		if (Skill){
-			def = Math.round(def*Skill.custom.Crush);
+	var CrushIt2 = AttackEvaluator.HitCritical.calculateDamage;
+	AttackEvaluator.HitCritical.calculateDamage = function(virtualActive, virtualPassive, attackEntry){
+		var damage = CrushIt2.call(this, virtualActive, virtualPassive, attackEntry);
+		var active = virtualActive.unitSelf;
+		var passive = virtualPassive.unitSelf;
+		var Skill = SkillControl.checkAndPushCustomSkill(active, passive, attackEntry, true, "Bypass");
+		if (Skill !== null){
+			var weapon = ItemControl.getEquippedWeapon(active);
+			if (Miscellaneous.isPhysicsBattle(weapon)){
+				var def = RealBonus.getDef(passive);
+			}
+			else{
+				var def = RealBonus.getMdf(passive);
+			}
+			damage += Math.round(def*Skill.custom.Crush);
 		}
-		return def;
+		return damage;
 	};
 }) (); //This seemingly random () is an important part of the function. Do not remove it.

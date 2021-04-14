@@ -1,7 +1,7 @@
 /*
-Welcome to the Rena Sage Mana System, a plugin written by Lady Rena.
-Written as an English-community accessible replacement to o-to's MP/SP script,
-this is an "alpha" release of the script. It is certainly missing some features.
+Welcome to the RS Mana System, a plugin written by Rogue Claris. It is being
+written as an English-community accessible replacement to o-to's MP/SP script. 
+This is an "alpha" release of the script. It is certainly missing some features.
 
 However, currently, it does not force anything on the user. Setting no parameters will
 not cause the game to utilize any of the plugin beyond setting a new Unit Bottom Window.
@@ -44,8 +44,8 @@ Currently, you must set custom parameters on each object, as below, to use the p
 }
 
 -Weapons & Items:
---Cost: How much it costs to swing this sword or swig this potion.
---Gain: How much you gain by swinging this sword or swigging this potion.
+--Cost: How much it costs to swing this sword or chug this potion.
+--Gain: How much you gain by swinging this sword or chugging this potion.
 --Type: Can be ADD, ADDPERCENT, DRAIN, or DRAINPERCENT. These should be apparent in effect by now, but...
 --ADD increases mana by a raw number of Gain. Incompatible with DRAIN and DRAINPERCENT.
 --ADDPERCENT treats Gain as a percent of max mana. Incompatible with DRAIN and DRAINPERCENT.
@@ -63,7 +63,7 @@ Currently, you must set custom parameters on each object, as below, to use the p
 --StrikeGain: Can be set as below to regenerate mana based on damage. This will ignore things like Type and Drain.
 {
 	RSMana:{
-		StrikeDrain:true
+		StrikeGain:true
 	}
 }
 
@@ -75,6 +75,68 @@ This plugin should be fully compatible with AI. If you notice anything amiss, pl
 
 -Lady Rena, July 10th, 2020.
 */
+
+var CL_SubtractY0 = UnitSimpleRenderer._drawName;
+UnitSimpleRenderer._drawName = function(x, y, unit, textui) {
+	if (root.getMetaSession().global.DrawManaMini === false){
+		CL_SubtractY0.call(this, x, y, unit, textui);
+	}
+	else{
+		CL_SubtractY0.call(this, x, y-5, unit, textui);
+	}
+};
+var CL_SubtractY1 = UnitSimpleRenderer._drawInfo;
+UnitSimpleRenderer._drawInfo = function(x, y, unit, textui) {
+	if (root.getMetaSession().global.DrawManaMini === false){
+		CL_SubtractY1.call(this, x, y, unit, textui);
+	}
+	else{
+		CL_SubtractY1.call(this, x, y-20, unit, textui);
+	}
+};
+var CL_SubtractY2 = UnitSimpleRenderer._drawSubInfo;
+UnitSimpleRenderer._drawSubInfo = function(x, y, unit, textui, mhp){
+	if (root.getMetaSession().global.DrawManaMini === false){
+		CL_SubtractY2.call(this, x, y, unit, textui, mhp);
+	}
+	else{
+		CL_SubtractY2.call(this, x, y-27, unit, textui, mhp);
+		x += GraphicsFormat.FACE_WIDTH + this._getInterval();
+		y += 29;
+		ContentRenderer.drawManaInfo(x, y, unit);
+	}
+};
+
+var DrawMoveCostCL0 = UnitMenuTopWindow._drawUnitClass;
+UnitMenuTopWindow._drawUnitClass = function(xBase, yBase) {
+	var cls = this._unit.getClass();
+	var textui = this.getWindowTextUI();
+	var color = textui.getColor();
+	var font = textui.getFont();
+	var length = this._getClassTextLength();
+	var manaclass = typeof this._unit.getClass().custom.RSMana === 'object' ? this._unit.getClass().custom.RSMana : null
+	var x = xBase + 155
+	var y = yBase + 35;
+	var xPlus = 10;
+	UnitRenderer.drawDefaultUnit(this._unit, x-35, y+15, null);
+	x += 15
+	if (TextRenderer.getTextWidth(this._unit.getName(), font) >= 15+xPlus){
+		xPlus += typeof this._unit.custom.BonusSpacingCL === 'number' ? this._unit.custom.BonusSpacingCL : 30
+	}
+	TextRenderer.drawText(x + xPlus , y-20, cls.getName(), length, color, font);
+	if (manaclass != null){
+		var cost = 1;
+		if (manaclass.Type === "DRAINPERCENT"){
+			cost = Math.round(unit.custom.RSMana.Max*(manaclass.Cost/100));
+		}
+		else{
+			cost = manaclass.Cost;
+		}
+		ItemInfoRenderer.drawKeyword(x+10, y-6, "Move Cost");
+		NumberRenderer.drawRightNumber(x+TextRenderer.getTextWidth("Move Cost",font)+15, y-6, cost)
+		ContentRenderer.drawManaInfo(x+10, y-17, this._unit)
+	}
+};
 
 var RS_ManaControl = {
 	
@@ -103,14 +165,14 @@ var RS_ManaControl = {
 	},
 	
 	setupUnit: function(unit){
-		if (typeof unit.custom.RSMana == 'object'){
+		if (typeof unit.custom.RSMana === 'object'){
 			unit.custom.RSMana.Current = unit.custom.RSMana.Max
 		}
 		else{
 			var cls = unit.getClass()
 			var manatest = cls.custom.RSMana
-			unit.custom.RSMana = {}
 			if (typeof manatest === 'object'){
+				unit.custom.RSMana = {}
 				unit.custom.RSMana.Max = Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv()-1)))
 				unit.custom.RSMana.Current = unit.custom.RSMana.Max
 				unit.custom.RSMana.Regen = manatest.Regen
@@ -118,13 +180,21 @@ var RS_ManaControl = {
 				unit.custom.RSMana.Increment = manatest.Increment
 			}
 			else{
-				unit.custom.RSMana.Max = Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv()-1)))
-				unit.custom.RSMana.Current = unit.custom.RSMana.Max
-				unit.custom.RSMana.Regen = [,]
-				unit.custom.RSMana.Regen[0] = "PERCENT"
-				unit.custom.RSMana.Regen[1] = this._defaultRegen;
-				unit.custom.RSMana.Cap = this._defaultCap
-				unit.custom.RSMana.Increment = this._defaultInc
+				cls.custom.RSMana = {
+					Cost:5,
+					Max:Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv()-1))),
+					Type:"DRAIN",
+					Regen:["PERCENT",this._defaultRegen],
+					GrowthChance:40,
+					Increment:this._defaultInc
+				}
+				var bigTop = Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv()-1)))
+				unit.custom.RSMana = {
+					Max:bigTop,
+					Current:bigTop,
+					Regen:["PERCENT",this._defaultRegen],
+					Cap:this._defaultCap
+				}
 			}
 		}
 	},
@@ -150,13 +220,13 @@ var RS_ManaControl = {
 		else if (typeof unit.getClass().custom.RSMana.GrowthChance === 'number'){
 			chance = Math.round(unit.getClass().custom.RSMana.GrowthChance)
 		}
-		if (typeof unit.custom.RSMana.Increment == 'number'){
+		if (typeof unit.custom.RSMana.Increment === 'number'){
 			if (Probability.getProbability(chance)){
 				unit.custom.RSMana.Max += unit.custom.RSMana.Increment
 				unit.custom.RSMana.Current += unit.custom.RSMana.Increment
 			}
 		}
-		else if (typeof unit.getClass().custom.RSMana.Increment == 'number'){
+		else if (typeof unit.getClass().custom.RSMana.Increment === 'number'){
 			if (Probability.getProbability(chance)){
 				unit.custom.RSMana.Max += unit.getClass().custom.RSMana.Increment
 				unit.custom.RSMana.Current += unit.getClass().custom.RSMana.Increment
@@ -173,6 +243,7 @@ var RS_ManaControl = {
 	},
 	
 	setMana: function(unit, obj){
+		root.log(unit.custom.RSMana.Current)
 		var Types = ["DRAIN", "DRAINPERCENT", "ADD", "ADDPERCENT"]
 		if (typeof unit.custom.RSMana != 'object'){
 			root.log('no unit mana detected, setting up unit.')
@@ -187,23 +258,27 @@ var RS_ManaControl = {
 			return;
 		}
 		var index = Types.indexOf(obj.Type.toUpperCase())
-		if (index == -1){
+		if (index === -1){
 			root.log('incorrect mana set type.')
 			return;
 		}
 		else{
 			var choice = Types[index]
-			if (choice == "DRAIN"){
-				unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max,Math.max(0, unit.custom.RSMana.Current - obj.Cost))
+			root.log(choice)
+			var Cost = typeof obj.Cost === 'number' ? obj.Cost : 0
+			root.log(Cost)
+			root.log(unit.custom.RSMana.Current)
+			if (choice === "DRAIN"){
+				unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max,Math.max(0, unit.custom.RSMana.Current - Cost))
 			}
-			else if (choice == "DRAINPERCENT"){
-				unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max,Math.max(0, unit.custom.RSMana.Current - Math.round(unit.custom.RSMana.Max*(obj.Cost/100))))
+			else if (choice === "DRAINPERCENT"){
+				unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max,Math.max(0, unit.custom.RSMana.Current - Math.round(unit.custom.RSMana.Max*(Cost/100))))
 			}
-			if (choice == "ADD"){
+			if (choice === "ADD"){
 				unit.custom.RSMana.Current = Math.max(0, Math.min(unit.custom.RSMana.Max, unit.custom.RSMana.Current + obj.Gain))
 			}
-			else if (choice == "ADDPERCENT"){
-				unit.custom.RSMana.Current = Math.Max(0, Math.min(unit.custom.RSMana.Max, unit.custom.RSMana.Current + Math.round(unit.custom.RSMana.Max*(obj.Gain/100))))
+			else if (choice === "ADDPERCENT"){
+				unit.custom.RSMana.Current = Math.max(0, Math.min(unit.custom.RSMana.Max, unit.custom.RSMana.Current + Math.round(unit.custom.RSMana.Max*(obj.Gain/100))))
 			}
 		}
 	},
@@ -223,13 +298,22 @@ var RS_ManaControl = {
 		if (typeof unit.custom.RSMana != 'object'){
 			this.setupUnit(unit)
 		}
-		if (unit.custom.RSMana.Regen[0].toUpperCase() == "PERCENT"){
+		if (unit.custom.RSMana.Regen[0].toUpperCase() === "PERCENT"){
 			unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max, unit.custom.RSMana.Current + (unit.custom.RSMana.Max * (unit.custom.RSMana.Regen[1]/100)))
-			root.log('hi')
 		}
-		else if (unit.custom.RSMana.Regen[0].toUpperCase() == "RAW"){
+		else if (unit.custom.RSMana.Regen[0].toUpperCase() === "RAW"){
 			unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max, unit.custom.RSMana.Current + unit.custom.RSMana.Regen[1])
 		}
+	},
+	
+	checkMana: function(unit, amt){
+		if (typeof unit.custom.RSMana != 'object'){
+			this.setupUnit(unit)
+		}
+		if (unit.custom.RSMana.Current < amt){
+			return false;
+		}
+		return true;
 	}
 }
 
@@ -258,15 +342,39 @@ ItemPackageControl.getCustomItemAvailabilityObject = function(item, keyword){
 ManaItemAvailability = defineObject(BaseItemAvailability,
 {
 	isItemAllowed: function(unit, targetUnit, item) {
-		if (typeof targetUnit.custom.RSMana == 'obj' && typeof item.custom.RSMana == 'obj'){
-			if (typeof item.custom.RSMana.Cost == 'number' && item.custom.RSMana.Cost > targetUnit.custom.RSMana.Current){
-				return false;
+		if (typeof item.custom.RSMana === 'object'){
+			root.log('1')
+			if (typeof targetUnit.custom.CopyCatMana === 'object'){
+				// root.log('copy 1')
+				if (typeof item.custom.RSMana.Cost === 'number' && item.custom.RSMana.Cost > targetUnit.custom.CopyCatMana.Current){
+					// root.log('copy cost fail')
+					return false;
+				}
+				else if (typeof item.custom.RSMana.Gain === 'number' && targetUnit.custom.CopyCatMana.Current >= targetUnit.custom.RSMana.Max){
+					// root.log('copy gain fail')
+					return false;
+				}
+				// root.log('copy true')
+				return true;
 			}
-			else if (typeof item.custom.RSMana.Gain == 'number' && targetUnit.custom.RSMana.Current === targetUnit.custom.RSMana.Max){
-				return false;
+			else if (typeof targetUnit.custom.RSMana === 'object'){
+				// root.log('unit 1')
+				if (typeof item.custom.RSMana.Cost === 'number' && item.custom.RSMana.Cost > targetUnit.custom.RSMana.Current){
+					// root.log('item cost fail')
+					return false;
+				}
+				else if (typeof item.custom.RSMana.Gain === 'number' && targetUnit.custom.RSMana.Current >= targetUnit.custom.RSMana.Max){
+					// root.log('item gain fail')
+					return false;
+				}
+				// root.log('unit true')
+				return true;
 			}
+			// root.log('neither copy nor unit')
+			return false;
 		}
-		return true;
+		// root.log('item false')
+		return false;
 	}
 }
 );
@@ -348,16 +456,16 @@ var ManaItemAI = defineObject(BaseItemAI,
 			return -1;
 		}
 		var Mana = 0
-		if (typeof manaobj.Gain == 'number' && manaobj.Type == "ADDPERCENT"){
+		if (typeof manaobj.Gain === 'number' && manaobj.Type === "ADDPERCENT"){
 			Mana = Math.min(unitobj.Max, unitobj.Max*(manaobj.Gain/100)+unitobj.Current)
 		}
-		else if (typeof manaobj.Gain == 'number' && manaobj.Type == "ADD"){
+		else if (typeof manaobj.Gain === 'number' && manaobj.Type === "ADD"){
 			Mana = Math.min(unitobj.Max, manaobj.Gain+unitobj.Current)
 		}
-		if (typeof manaobj.Cost == 'number' && manaobj.Type == "DRAINPERCENT"){
+		if (typeof manaobj.Cost === 'number' && manaobj.Type === "DRAINPERCENT"){
 			Mana += Math.max(0, unitobj.Max*(manaobj.Cost/100)-unitobj.Current)
 		}
-		else if (typeof manaobj.Cost == 'number' && manaobj.Type == "DRAIN"){
+		else if (typeof manaobj.Cost === 'number' && manaobj.Type === "DRAIN"){
 			Mana += Math.max(0, manaobj.Cost-unitobj.Current)
 		}
 		else{
@@ -413,13 +521,13 @@ ManaItemInfo = defineObject(BaseItemInfo,
 			ItemInfoRenderer.drawKeyword(x, y, "Please setup this this._item.")
 		}
 		else{
-			if (typeof this._item.custom.RSMana.Gain == 'number'){
-				if (this._item.custom.RSMana.Type.toUpperCase() == "ADDPERCENT" || this._item.custom.RSMana.Type.toUpperCase() == "ADD"){
+			if (typeof this._item.custom.RSMana.Gain === 'number'){
+				if (this._item.custom.RSMana.Type.toUpperCase() === "ADDPERCENT" || this._item.custom.RSMana.Type.toUpperCase() === "ADD"){
 					ItemInfoRenderer.drawKeyword(x, y, "Mana Restorative")
 				}
 			}
-			else if (typeof this._item.custom.RSMana.Cost == 'number'){
-				if (this._item.custom.RSMana.Type.toUpperCase() == "DRAINPERCENT" || this._item.custom.RSMana.Type.toUpperCase() == "DRAIN"){
+			else if (typeof this._item.custom.RSMana.Cost === 'number'){
+				if (this._item.custom.RSMana.Type.toUpperCase() === "DRAINPERCENT" || this._item.custom.RSMana.Type.toUpperCase() === "DRAIN"){
 					ItemInfoRenderer.drawKeyword(x, y, "Mana Drainer")
 				}
 			}
@@ -437,7 +545,7 @@ ManaItemInfo = defineObject(BaseItemInfo,
 		if (typeof this._item.custom.RSMana != 'object'){
 			return count;
 		}
-		if (typeof this._item.custom.RSMana.Gain == 'number' || typeof this._item.custom.RSMana.Cost == 'number'){
+		if (typeof this._item.custom.RSMana.Gain === 'number' || typeof this._item.custom.RSMana.Cost === 'number'){
 			count += 1
 		}
 		return count;
@@ -447,27 +555,27 @@ ManaItemInfo = defineObject(BaseItemInfo,
 		var TUI = root.queryTextUI('default_window');
 		var FONT = TUI.getFont();
 		var COLOR = TUI.getColor();
-		if (typeof this._item.custom.RSMana.Gain == 'number'){
+		if (typeof this._item.custom.RSMana.Gain === 'number'){
 			ItemInfoRenderer.drawKeyword(x, y, "Mana Heal");
 			x += Math.floor(TextRenderer.getTextWidth("Mana Heal", FONT)+5)
-			if (this._item.custom.RSMana.Type.toUpperCase() == "ADDPERCENT"){
+			if (this._item.custom.RSMana.Type.toUpperCase() === "ADDPERCENT"){
 				NumberRenderer.drawRightNumber(x, y, this._item.custom.RSMana.Gain);
 				x += Math.floor(TextRenderer.getTextWidth(this._item.custom.RSMana.Gain.toString(), FONT)+5)
 				TextRenderer.drawSingleCharacter(x, y+3, "%", COLOR, FONT);
 			}
-			else if (this._item.custom.RSMana.Type.toUpperCase() == "ADD"){
+			else if (this._item.custom.RSMana.Type.toUpperCase() === "ADD"){
 				NumberRenderer.drawRightNumber(x, y, this._item.custom.RSMana.Gain);
 			}
 		}
-		else if (typeof this._item.custom.RSMana.Cost == 'number'){
+		else if (typeof this._item.custom.RSMana.Cost === 'number'){
 			ItemInfoRenderer.drawKeyword(x, y, 'Mana Cost')
 			x += Math.floor(TextRenderer.getTextWidth("Mana Cost", FONT)+5)
-			if (this._item.custom.RSMana.Type.toUpperCase() == "DRAINPERCENT"){
+			if (this._item.custom.RSMana.Type.toUpperCase() === "DRAINPERCENT"){
 				NumberRenderer.drawRightNumber(x, y, this._item.custom.RSMana.Cost);
 				x += Math.floor(TextRenderer.getTextWidth(this._item.custom.RSMana.Cost.toString(), FONT)+5)
 				TextRenderer.drawSingleCharacter(x, y+3, "%", COLOR, FONT);
 			}
-			else if (this._item.custom.RSMana.Type.toUpperCase() == "DRAIN"){
+			else if (this._item.custom.RSMana.Type.toUpperCase() === "DRAIN"){
 				NumberRenderer.drawRightNumber(x, y, this._item.custom.RSMana.Cost);
 			}
 		}
@@ -509,72 +617,61 @@ var ManaItemPotency = defineObject(BaseItemPotency,
 }
 );
 
-var ManaSentenceWindow = defineObject(BaseMenuBottomWindow,
-{
-	
-	setUnitMenuData: function(unit) {
-	},
-	
-	changeUnitMenuTarget: function(unit){
-		var i, count;
-		
-		this._unit = unit;
-		
-		this._groupArray = [];
-		this._configureSentence(this._groupArray);
-		
-		count = this._groupArray.length;
-		for (i = 0; i < count; i++) {
-			this._groupArray[i].setParentWindow(this);
-			this._groupArray[i].setValues(unit, ItemControl.getEquippedWeapon(unit), this._totalStatus);
-		}
-	},
-	
-	drawWindowContent: function(x, y) {
-		var i;
-		var count = this._groupArray.length;
-		
-		for (i = 0; i < count; i++) {
-			this._groupArray[i].drawUnitSentence(x, y, this._unit, this._weapon, this._totalStatus);
-			y += this._groupArray[i].getUnitSentenceCount(this._unit) * this.getUnitSentenceSpaceY();
-		}
-	},
-	
-	isHelpMode: function(){
-		return false;
-	},
-	
-	isTracingHelp: function(){
-		return false;
-	},
-	
-	_configureSentence: function(groupArray) {
-		groupArray.appendObject(ManaSentence.ManaInfo)
-	},
-	
-	getUnitSentenceSpaceY: function() {
-		return 25;
-	}
-}
-);
 
-var BaseManaSentence = defineObject(BaseUnitSentence,
+var DrawManaWeaponCL0 = ItemInfoWindow._configureWeapon;
+ItemInfoWindow._configureWeapon = function(groupArray) {
+	DrawManaWeaponCL0.call(this, groupArray);
+	groupArray.insertObject(ItemSentence.ManaDetails, 2)
+};
+
+var DrawManaItemCL0 = ItemInfoWindow._configureItem;
+ItemInfoWindow._configureItem = function(groupArray){
+	DrawManaItemCL0.call(this, groupArray)
+	groupArray.insertObject(ItemSentence.ManaDetails, 2)
+}
+
+ItemSentence.ManaDetails = defineObject(BaseItemSentence,
 {
-	_unitSentenceWindow: null,
-	
-	setParentWindow: function(unitSentenceWindow) {
-		this._unitSentenceWindow = unitSentenceWindow;
+	drawItemSentence: function(x, y, item) {
+		var text;
+		var tx = 0;
+		var checkMana = typeof item.custom.RSMana === 'object' ? item.custom.RSMana : null
+		if (checkMana !== null){
+			if (typeof checkMana.Cost === 'number'){
+				text = "Mana Cost"
+				ItemInfoRenderer.drawKeyword(x, y, text);
+				NumberRenderer.drawRightNumber(x+TextRenderer.getTextWidth(text, root.queryTextUI('default_window').getFont())+5, y, checkMana.Cost);
+			}
+			if (typeof checkMana.Gain === 'number'){
+				text = "Mana Gain"
+				if (typeof checkMana.Cost === 'number'){					
+					tx += TextRenderer.getTextWidth("Mana Cost", root.queryTextUI('default_window').getFont())*1.5
+				}
+				ItemInfoRenderer.drawKeyword(x+tx, y, text);
+				NumberRenderer.drawRightNumber(x+ItemInfoRenderer.getSpaceX()+tx+15, y, checkMana.Gain);
+			}
+			if (checkMana.StrikeGain && item.isWeapon()){
+				text = "Strike Gain"
+				ItemInfoRenderer.drawKeyword(x, y+22, text);
+			}
+		}
 	},
 	
-	getUnitSentenceCount: function(unit) {
-		return 1;
+	getItemSentenceCount: function(item) {
+		var count = 0;
+		var checkMana = typeof item.custom.RSMana === 'object' ? item.custom.RSMana : null
+		if (checkMana !== null){
+			count += typeof checkMana.Cost === 'number' || typeof checkMana.Gain === 'number' ? 1 : 0
+			count += checkMana.StrikeGain ? 1 : 0
+		}
+		return count;
 	}
 }
 );
 
 var ManaSentence = {}
 
-ManaSentence.ManaInfo = defineObject(BaseManaSentence,
+ManaSentence.ManaInfo = defineObject(BaseItemSentence,
 {
 	_cur: 0,
 	_max: 0,
@@ -586,7 +683,7 @@ ManaSentence.ManaInfo = defineObject(BaseManaSentence,
 	
 	setValues: function(unit, weapon, totalStatus) {
 		if (unit != null && typeof unit.custom.RSMana === 'object'){
-			this._max = unit.custom.RSMana.Max			
+			this._max = unit.custom.RSMana.Max
 			this._cur = unit.custom.RSMana.Current
 		}
 		if (weapon != null){
@@ -643,8 +740,8 @@ ManaSentence.ManaInfo = defineObject(BaseManaSentence,
 			isValid = false;
 		}
 		else{
-			value = typeof this._weapon.custom.RSMana.Cost == 'number' ? this._weapon.custom.RSMana.Cost : typeof this._weapon.custom.RSMana.Gain == 'number' ? this._weapon.custom.RSMana.Gain : 0
-			text = typeof this._weapon.custom.RSMana.Gain == 'number' ? "Atk Gain" : "Atk Cost"
+			value = typeof this._weapon.custom.RSMana.Cost === 'number' ? this._weapon.custom.RSMana.Cost : typeof this._weapon.custom.RSMana.Gain === 'number' ? this._weapon.custom.RSMana.Gain : 0
+			text = typeof this._weapon.custom.RSMana.Gain === 'number' ? "Atk Gain" : "Atk Cost"
 		}
 		TextRenderer.drawKeywordText(x, y, text, length, color, font);
 		x += 78;
@@ -663,17 +760,11 @@ ManaSentence.ManaInfo = defineObject(BaseManaSentence,
 }
 );
 
-var DrawMana01 = UnitMenuScreen._configureBottomWindows;
-UnitMenuScreen._configureBottomWindows = function(groupArray) {
-	DrawMana01.call(this, groupArray);
-	groupArray.appendWindowObject(ManaSentenceWindow, this);
-};
-
 var SpendMana01 = ItemControl.decreaseLimit;
 ItemControl.decreaseLimit = function(unit, item) {
 	SpendMana01.call(this, unit, item);
-	if (typeof item.custom.RSMana == 'object'){
-		if (!item.isWeapon() && item.getCustomKeyword() == "RSMana"){
+	if (typeof item.custom.RSMana === 'object'){
+		if (!item.isWeapon() && item.getCustomKeyword() === "RSMana"){
 			return;
 		}
 		if (item.custom.RSMana.StrikeGain){
@@ -686,33 +777,35 @@ ItemControl.decreaseLimit = function(unit, item) {
 var SpendManaTemp = SimulateMove._endMove;
 SimulateMove._endMove = function(unit) {
 	SpendManaTemp.call(this, unit);
-	var manaclass = typeof unit.getClass().custom.RSMana == 'object' ? unit.getClass().custom.RSMana : null
+	var manaclass = typeof unit.getClass().custom.RSMana === 'object' ? unit.getClass().custom.RSMana : null
 	var manaskill = SkillControl.getPossessionCustomSkill(unit, "SaveManaMove")
 	if (manaclass != null){
 		var manacopy = {}
 		manacopy.Type = manaclass.Type
 		manacopy.Cost = manaclass.Cost
-		if (manaskill && typeof manaskill.custom.RSMana == 'object'){
-			if (manaskill.custom.MoveSaveType.toUpperCase() == "PERCENT"){
+		if (manaskill && typeof manaskill.custom.RSMana === 'object'){
+			if (manaskill.custom.MoveSaveType.toUpperCase() === "PERCENT"){
 				manacopy.Cost = Math.round(manacopy.Cost*(manaskill.custom.MoveSave/100))
 			}
-			else if (manaskill.custom.MoveSaveType.toUpperCase() == "RAW"){
+			else if (manaskill.custom.MoveSaveType.toUpperCase() === "RAW"){
 				manacopy.Cost = manacopy.Cost - manaskill.custom.MoveSave
 			}
 		}
 		manacopy.Cost = Math.round(unit.getMostResentMov()*manacopy.Cost)
 		unit.custom.CopyCatMana = manacopy
+		unit.custom.CopyCatMana.Current = unit.custom.RSMana.Current - manacopy.Cost;
+		root.log("+++"+unit.custom.CopyCatMana.Current)
 	}
 };
 
 var SpendMana02 = MapSequenceCommand._doLastAction;
 MapSequenceCommand._doLastAction = function(){
 	var result = SpendMana02.call(this)
-	var manacopy = typeof this._targetUnit.custom.CopyCatMana == 'object' ? this._targetUnit.custom.CopyCatMana : null
+	var manacopy = typeof this._targetUnit.custom.CopyCatMana === 'object' ? this._targetUnit.custom.CopyCatMana : null
 	if (manacopy != null && result in [0, 1]){
 		RS_ManaControl.setMana(this._targetUnit, manacopy)
+		delete this._targetUnit.custom.CopyCatMana
 	}
-	delete this._targetUnit.custom.CopyCatMana
 	return result;
 };
 
@@ -720,18 +813,18 @@ var ManaLimitsMovementRS = UnitRangePanel._getRangeMov;
 UnitRangePanel._getRangeMov = function(unit) {
 	var mov = ManaLimitsMovementRS.call(this, unit)
 	var cost;
-	var manaclass = typeof unit.getClass().custom.RSMana == 'object' ? unit.getClass().custom.RSMana : null
+	var manaclass = typeof unit.getClass().custom.RSMana === 'object' ? unit.getClass().custom.RSMana : null
 	if (unit.isMovePanelVisible()) {
 		if (manaclass != null){
-			if (manaclass.Type == "DRAINPERCENT"){
+			if (manaclass.Type === "DRAINPERCENT"){
 				cost = Math.round(unit.custom.RSMana.Max*(manaclass.Cost/100))
 			}
 			else{
 				cost = manaclass.Cost
 			}
 			var manaskill = SkillControl.getPossessionCustomSkill(unit, "SaveManaMove")
-			if (manaskill && typeof manaskill.custom.RSMana == 'object'){
-				if (manaskill.custom.MoveSaveType.toUpperCase() == "PERCENT"){
+			if (manaskill && typeof manaskill.custom.RSMana === 'object'){
+				if (manaskill.custom.MoveSaveType.toUpperCase() === "PERCENT"){
 					cost = Math.round(cost*(manaskill.MoveSave/100))
 				}
 			}
@@ -785,16 +878,16 @@ ItemControl.isWeaponAvailable = function(unit, item){
 	if (typeof unit.custom.RSMana != 'object'){
 		return result;
 	}
-	else if (result && typeof item.custom.RSMana == 'object'){
+	else if (result && typeof item.custom.RSMana === 'object'){
 		if (typeof item.custom.RSMana.Type === 'string' && item.custom.RSMana.Type.toUpperCase() in ["ADD", "ADDPERCENT"]){
 			return true;
 		}
-		else if (typeof item.custom.RSMana.Type === 'string' && item.custom.RSMana.Type.toUpperCase() == 'DRAINPERCENT'){
+		else if (typeof item.custom.RSMana.Type === 'string' && item.custom.RSMana.Type.toUpperCase() === 'DRAINPERCENT'){
 			if (unit.custom.RSMana.Current < Math.round(unit.custom.RSMana.Max*(item.custom.RSMana.Cost/100))){
 				return false;
 			}
 		}
-		else if (typeof item.custom.RSMana.Type === 'string' && item.custom.RSMana.Type.toUpperCase() == 'DRAIN' && unit.custom.RSMana.Current < item.custom.RSMana.Cost){
+		else if (typeof item.custom.RSMana.Type === 'string' && item.custom.RSMana.Type.toUpperCase() === 'DRAIN' && unit.custom.RSMana.Current < item.custom.RSMana.Cost){
 			return false;
 		}
 		return true;
@@ -805,7 +898,7 @@ ItemControl.isWeaponAvailable = function(unit, item){
 var GrowMana01 = ExperienceControl._addExperience
 ExperienceControl._addExperience = function(unit, getExp) {
 	var result = GrowMana01.call(this, unit, getExp)
-	if (result && typeof unit.custom.RSMana == 'object'){
+	if (result && typeof unit.custom.RSMana === 'object'){
 		RS_ManaControl.increaseMana(unit)
 	}
 	return result;
@@ -817,8 +910,21 @@ AttackEvaluator.HitCritical.evaluateAttackEntry = function(virtualActive, virtua
 	if (attackEntry.isHit){
 		var active = virtualActive.unitSelf
 		var weapon = ItemControl.getEquippedWeapon(active)
-		if (typeof active.custom.RSMana === 'object' && weapon != null && typeof weapon.custom.RSMana == 'object' && weapon.custom.RSMana.StrikeGain){
+		if (typeof active.custom.RSMana === 'object' && weapon != null && typeof weapon.custom.RSMana === 'object' && weapon.custom.RSMana.StrikeGain){
 			RS_ManaControl.strikeGain(active, attackEntry.damagePassive)
 		}
+	}
+};
+
+ContentRenderer.drawManaInfo = function(x, y, unit) {
+	var manacheck = typeof unit.custom.RSMana === 'object' ? unit.custom.RSMana : null
+	y += 32
+	if (manacheck !== null){
+		var pic = root.queryUI('unit_gauge');
+		TextRenderer.drawSignText(x, y, 'Mana');
+		NumberRenderer.drawNumber(x+60, y, manacheck.Current);
+		TextRenderer.drawSignText(x+70, y, '/');
+		NumberRenderer.drawRightNumber(x+80, y, manacheck.Max);
+		this.drawGauge(x, y+20, manacheck.Current, manacheck.Max, 1, 110, pic);
 	}
 };
