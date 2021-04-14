@@ -177,7 +177,6 @@ var ItemOnlyScrollbar = defineObject(ItemListScrollbar,
 	
 	initialize: function(){
 		InvMarkCL1.call(this)
-		//megaman
 		var iconList = root.getBaseData().getGraphicsResourceList(GraphicsType.ICON, true).getCollectionData(1, 0).getId()
 		var icon = root.createResourceHandle(true, iconList, 0, 4, 0)
 		this._list = [ItemControl.getEquippedShield(this._unit), ItemControl.getEquippedArmband(this._unit)]
@@ -514,7 +513,7 @@ var UnitMenuBottomWeaponWindow = defineObject(CustomBottomUnitWindow,
 }
 );
 
-var WepOnlyInteraction = defineObject(TopCustomInteraction,
+var WepOnlyInteraction = defineObject(ItemInteraction,
 {
 	_textui: null,
 	
@@ -524,10 +523,6 @@ var WepOnlyInteraction = defineObject(TopCustomInteraction,
 		
 		this._window = createWindowObject(ItemInfoWindow, this);
 	},
-	
-	hasWindow: function() {
-        return this._window!=null;
-    },
 	
 	setUnitData: function(unit) {
         this._scrollbar.setDataScrollbar(unit);
@@ -542,14 +537,6 @@ var WepOnlyInteraction = defineObject(TopCustomInteraction,
     //The interaction must use a diffent scrollbar object
     getScrollbarObject: function() {
         return WepDropOnlyScrollbar;
-    },
-
-    getWindowObject: function() {
-        return ItemInfoWindow;
-    },
-
-    getWindowTextUI: function() {
-        return root.queryTextUI('default_window');
     },
 
     hasWindow: function() {
