@@ -16,6 +16,20 @@ based on the input integer. Use the keyword "RogueBlowCL" to make
 it activate on the unit's own phase. Use the keyword "RogueRiposteCL"
 to make it activate only on the turn of someone who can harm the unit.
 Lastly, use the keyword "RogueStanceCL" to make it activate on both turns.
+
+=Optional parameters=
+You may add the Custom Parameters like so to lock a skill to a weapon type.
+{
+	WeaponTypeCL:["Lance","Bow"],
+	BonusDamage:7,
+	BonusAccuracy:15,
+	BonusAvoid:15,
+	BonusDefense:3,
+	BonusCritical:10,
+	BonusHits:1
+}
+As long as they are in an [array] and Capitalized like the Weapon Type names,
+they will match to the weapon types and be locked properly.
 */
 
 (function() {
@@ -24,6 +38,11 @@ TurnCheckCL = function(unit, skill){
 		return false;
 	}
 	if (!skill){
+		return false;
+	}
+	var weapon = ItemControl.getEquippedWeapon(unit)
+	if (weapon !== null && typeof skill.custom.WeaponTypeCL === 'object' && skill.custom.WeaponTypeCL.indexOf(weapon.getWeaponType().getName().toUpperCase) === -1){
+		root.log('weapon type fail')
 		return false;
 	}
 	if (unit.getUnitType() === UnitType.PLAYER){
@@ -64,31 +83,19 @@ var AttackPowerCL0 = DamageCalculator.calculateDamage;
 DamageCalculator.calculateDamage = function(active, passive, weapon, isCritical, activeTotalStatus, passiveTotalStatus, trueHitValue) {
 	var pow = AttackPowerCL0.call(this, active, passive, weapon, isCritical, activeTotalStatus, passiveTotalStatus, trueHitValue);
 	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
-	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
+	var RiposteSkill = SkillControl.getPossessionCustomSkill(active, 'RogueRiposteCL');
 	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
-	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
 	if (StanceSkillA){
-		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			pow += typeof StanceSkillA.custom.BonusDamage === 'number' ? StanceSkillA.custom.BonusDamage : 0;
 		}
-		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			pow += typeof StanceSkillA.custom.BonusDamage === 'number' ? StanceSkillA.custom.BonusDamage : 0;
 		}
 		else{
 			pow += typeof StanceSkillA.custom.BonusDamage === 'number' ? StanceSkillA.custom.BonusDamage : 0;
-		}
-	}
-	if (StanceSkillB){
-		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
-			pow += typeof StanceSkillB.custom.BonusDamage === 'number' ? StanceSkillB.custom.BonusDamage : 0;
-		}
-		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
-			pow += typeof StanceSkillB.custom.BonusDamage === 'number' ? StanceSkillB.custom.BonusDamage : 0;
-		}
-		else{
-			pow += typeof StanceSkillB.custom.BonusDamage === 'number' ? StanceSkillB.custom.BonusDamage : 0;
 		}
 	}
 	if (BlowSkill && ableBlow) {
@@ -103,10 +110,10 @@ DamageCalculator.calculateDamage = function(active, passive, weapon, isCritical,
 		}
 	}
 	if (RiposteSkill && ableRiposte) {
-		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
+		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
 			pow += typeof RiposteSkill.custom.BonusDamage === 'number' ? RiposteSkill.custom.BonusDamage : 0;
 		}
-		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
+		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
 			pow += typeof RiposteSkill.custom.BonusDamage === 'number' ? RiposteSkill.custom.BonusDamage : 0;
 		}
 		else{
@@ -120,23 +127,11 @@ DamageCalculator.calculateDamage = function(active, passive, weapon, isCritical,
 var MightyShield = DamageCalculator.calculateDefense;
 DamageCalculator.calculateDefense = function(active, passive, weapon, isCritical, totalStatus, trueHitValue) {	
 	var def = MightyShield.call(this,active,passive,weapon,isCritical,totalStatus,trueHitValue);
-	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
+	var BlowSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueBlowCL');
 	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
-	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
 	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
-	if (StanceSkillA){
-		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			def += typeof StanceSkillA.custom.BonusDefense === 'number' ? StanceSkillA.custom.BonusDefense : 0;
-		}
-		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			def += typeof StanceSkillA.custom.BonusDefense === 'number' ? StanceSkillA.custom.BonusDefense : 0;
-		}
-		else{
-			def += typeof StanceSkillA.custom.BonusDefense === 'number' ? StanceSkillA.custom.BonusDefense : 0;
-		}
-	}
 	if (StanceSkillB){
 		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			def += typeof StanceSkillB.custom.BonusDefense === 'number' ? StanceSkillB.custom.BonusDefense : 0;
@@ -178,31 +173,19 @@ var SniperScope = HitCalculator.calculateSingleHit;
 HitCalculator.calculateSingleHit = function(active, passive, weapon, totalStatus) {
 	var result = SniperScope.call(this,active,passive,weapon,totalStatus);
 	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
-	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
+	var RiposteSkill = SkillControl.getPossessionCustomSkill(active, 'RogueRiposteCL');
 	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
-	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
 	if (StanceSkillA){
-		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			result += typeof StanceSkillA.custom.BonusAccuracy === 'number' ? StanceSkillA.custom.BonusAccuracy : 0;
 		}
-		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			result += typeof StanceSkillA.custom.BonusAccuracy === 'number' ? StanceSkillA.custom.BonusAccuracy : 0;
 		}
 		else{
 			result += typeof StanceSkillA.custom.BonusAccuracy === 'number' ? StanceSkillA.custom.BonusAccuracy : 0;
-		}
-	}
-	if (StanceSkillB){
-		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
-			result += typeof StanceSkillB.custom.BonusAccuracy === 'number' ? StanceSkillB.custom.BonusAccuracy : 0;
-		}
-		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
-			result += typeof StanceSkillB.custom.BonusAccuracy === 'number' ? StanceSkillB.custom.BonusAccuracy : 0;
-		}
-		else{
-			result += typeof StanceSkillB.custom.BonusAccuracy === 'number' ? StanceSkillB.custom.BonusAccuracy : 0;
 		}
 	}
 	if (BlowSkill && ableBlow) {
@@ -234,9 +217,8 @@ var MightyBlow = CriticalCalculator.calculateSingleCritical;
 CriticalCalculator.calculateSingleCritical = function(active, passive, weapon, totalStatus) {
 	var result = MightyBlow.call(this,active,passive,weapon,totalStatus);
 	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
-	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
+	var RiposteSkill = SkillControl.getPossessionCustomSkill(active, 'RogueRiposteCL');
 	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
-	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
 	if (StanceSkillA){
@@ -248,17 +230,6 @@ CriticalCalculator.calculateSingleCritical = function(active, passive, weapon, t
 		}
 		else{
 			result += typeof StanceSkillA.custom.BonusCritical === 'number' ? StanceSkillA.custom.BonusCritical : 0;
-		}
-	}
-	if (StanceSkillB){
-		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			result += typeof StanceSkillB.custom.BonusCritical === 'number' ? StanceSkillB.custom.BonusCritical : 0;
-		}
-		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			result += typeof StanceSkillB.custom.BonusCritical === 'number' ? StanceSkillB.custom.BonusCritical : 0;
-		}
-		else{
-			result += typeof StanceSkillB.custom.BonusCritical === 'number' ? StanceSkillB.custom.BonusCritical : 0;
 		}
 	}
 	if (BlowSkill && ableBlow) {
@@ -289,28 +260,16 @@ CriticalCalculator.calculateSingleCritical = function(active, passive, weapon, t
 var FancyFeet = HitCalculator.calculateAvoid;
 HitCalculator.calculateAvoid = function(active, passive, weapon, totalStatus) {
 	var Dodge = FancyFeet.call(this, active, passive, weapon, totalStatus);
-	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
+	var BlowSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueBlowCL');
 	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
-	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
 	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
-	if (StanceSkillA){
-		if (StanceSkillA.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			Dodge += typeof StanceSkillA.custom.BonusAvoid === 'number' ? StanceSkillA.custom.BonusAvoid : 0;
-		}
-		else if (StanceSkillA.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			Dodge += typeof StanceSkillA.custom.BonusAvoid === 'number' ? StanceSkillA.custom.BonusAvoid : 0;
-		}
-		else{
-			Dodge += typeof StanceSkillA.custom.BonusAvoid === 'number' ? StanceSkillA.custom.BonusAvoid : 0;
-		}
-	}
 	if (StanceSkillB){
-		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof StanceSkillB.custom.BonusAvoid === 'number' ? StanceSkillB.custom.BonusAvoid : 0;
 		}
-		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof StanceSkillB.custom.BonusAvoid === 'number' ? StanceSkillB.custom.BonusAvoid : 0;
 		}
 		else{
@@ -318,10 +277,10 @@ HitCalculator.calculateAvoid = function(active, passive, weapon, totalStatus) {
 		}
 	}
 	if (BlowSkill && ableBlow) {
-		if (BlowSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (BlowSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof BlowSkill.custom.BonusAvoid === 'number' ? BlowSkill.custom.BonusAvoid : 0;
 		}
-		else if (BlowSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (BlowSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof BlowSkill.custom.BonusAvoid === 'number' ? BlowSkill.custom.BonusAvoid : 0;
 		}
 		else{
@@ -329,10 +288,10 @@ HitCalculator.calculateAvoid = function(active, passive, weapon, totalStatus) {
 		}
 	}
 	if (RiposteSkill && ableRiposte) {
-		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof RiposteSkill.custom.BonusAvoid === 'number' ? RiposteSkill.custom.BonusAvoid : 0;
 		}
-		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			Dodge += typeof RiposteSkill.custom.BonusAvoid === 'number' ? RiposteSkill.custom.BonusAvoid : 0;
 		}
 		else{
@@ -346,9 +305,8 @@ var ThousandCuts = Calculator.calculateAttackCount;
 Calculator.calculateAttackCount = function(active, passive, weapon) {
 	var count = ThousandCuts.call(this, active, passive, weapon);
 	var BlowSkill = SkillControl.getPossessionCustomSkill(active, 'RogueBlowCL');
-	var RiposteSkill = SkillControl.getPossessionCustomSkill(passive, 'RogueRiposteCL');
+	var RiposteSkill = SkillControl.getPossessionCustomSkill(active, 'RogueRiposteCL');
 	var StanceSkillA = SkillControl.getPossessionCustomSkill(active, 'RogueStanceCL');
-	var StanceSkillB = SkillControl.getPossessionCustomSkill(passive, 'RogueStanceCL');
 	var ableBlow = TurnCheckCL(active, BlowSkill)
 	var ableRiposte = TurnCheckCL(passive, RiposteSkill)
 	if (StanceSkillA){
@@ -360,17 +318,6 @@ Calculator.calculateAttackCount = function(active, passive, weapon) {
 		}
 		else{
 			count += typeof StanceSkillA.custom.BonusHits === 'number' ? StanceSkillA.custom.BonusHits : 0;
-		}
-	}
-	if (StanceSkillB){
-		if (StanceSkillB.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			count += typeof StanceSkillB.custom.BonusHits === 'number' ? StanceSkillB.custom.BonusHits : 0;
-		}
-		else if (StanceSkillB.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
-			count += typeof StanceSkillB.custom.BonusHits === 'number' ? StanceSkillB.custom.BonusHits : 0;
-		}
-		else{
-			count += typeof StanceSkillB.custom.BonusHits === 'number' ? StanceSkillB.custom.BonusHits : 0;
 		}
 	}
 	if (BlowSkill && ableBlow) {
@@ -385,10 +332,10 @@ Calculator.calculateAttackCount = function(active, passive, weapon) {
 		}
 	}
 	if (RiposteSkill && ableRiposte) {
-		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		if (RiposteSkill.custom.PhysicalOnly && Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			count += typeof RiposteSkill.custom.BonusHits === 'number' ? RiposteSkill.custom.BonusHits : 0;
 		}
-		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(passive))){
+		else if (RiposteSkill.custom.MagicalOnly && !Miscellaneous.isPhysicsBattle(ItemControl.getEquippedWeapon(active))){
 			count += typeof RiposteSkill.custom.BonusHits === 'number' ? RiposteSkill.custom.BonusHits : 0;
 		}
 		else{
