@@ -165,16 +165,16 @@ var RS_ManaControl = {
 	},
 	
 	setupUnit: function(unit){
-		if (typeof unit.custom.RSMana === 'object'){
-			unit.custom.RSMana.Current = unit.custom.RSMana.Max
+		if (typeof unit.custom.RSMana === 'object' && typeof unit.custom.RSMana.Max === 'number'){
+			unit.custom.RSMana.Current = Number(unit.custom.RSMana.Max)
 		}
 		else{
 			var cls = unit.getClass()
 			var manatest = cls.custom.RSMana
-			if (typeof manatest === 'object'){
+			if (typeof manatest === 'object' && typeof cls.custom.RSMana.Max === 'number'){
 				unit.custom.RSMana = {}
 				unit.custom.RSMana.Max = Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv()-1)))
-				unit.custom.RSMana.Current = unit.custom.RSMana.Max
+				unit.custom.RSMana.Current = manatest.Max
 				unit.custom.RSMana.Regen = manatest.Regen
 				unit.custom.RSMana.Cap = manatest.Cap
 				unit.custom.RSMana.Increment = manatest.Increment
@@ -186,14 +186,14 @@ var RS_ManaControl = {
 					Type:"DRAIN",
 					Regen:["PERCENT",this._defaultRegen],
 					GrowthChance:40,
-					Increment:this._defaultInc
-				}
-				var bigTop = Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv()-1)))
-				unit.custom.RSMana = {
-					Max:bigTop,
-					Current:bigTop,
-					Regen:["PERCENT",this._defaultRegen],
+					Increment:this._defaultInc,
 					Cap:this._defaultCap
+				}
+				
+				unit.custom.RSMana = {
+					Max:cls.custom.RSMana.Max,
+					Current:cls.custom.RSMana.Max,
+					Regen:cls.custom.RSMana.Regen
 				}
 			}
 		}
@@ -339,37 +339,26 @@ ManaItemAvailability = defineObject(BaseItemAvailability,
 {
 	isItemAllowed: function(unit, targetUnit, item) {
 		if (typeof item.custom.RSMana === 'object'){
-			root.log('1')
 			if (typeof targetUnit.custom.CopyCatMana === 'object'){
-				// root.log('copy 1')
 				if (typeof item.custom.RSMana.Cost === 'number' && item.custom.RSMana.Cost > targetUnit.custom.CopyCatMana.Current){
-					// root.log('copy cost fail')
 					return false;
 				}
 				else if (typeof item.custom.RSMana.Gain === 'number' && targetUnit.custom.CopyCatMana.Current >= targetUnit.custom.RSMana.Max){
-					// root.log('copy gain fail')
 					return false;
 				}
-				// root.log('copy true')
 				return true;
 			}
 			else if (typeof targetUnit.custom.RSMana === 'object'){
-				// root.log('unit 1')
 				if (typeof item.custom.RSMana.Cost === 'number' && item.custom.RSMana.Cost > targetUnit.custom.RSMana.Current){
-					// root.log('item cost fail')
 					return false;
 				}
 				else if (typeof item.custom.RSMana.Gain === 'number' && targetUnit.custom.RSMana.Current >= targetUnit.custom.RSMana.Max){
-					// root.log('item gain fail')
 					return false;
 				}
-				// root.log('unit true')
 				return true;
 			}
-			// root.log('neither copy nor unit')
 			return false;
 		}
-		// root.log('item false')
 		return false;
 	}
 }
