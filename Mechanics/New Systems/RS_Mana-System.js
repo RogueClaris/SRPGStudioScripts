@@ -243,7 +243,6 @@ var RS_ManaControl = {
 	},
 	
 	setMana: function(unit, obj){
-		root.log(unit.custom.RSMana.Current)
 		var Types = ["DRAIN", "DRAINPERCENT", "ADD", "ADDPERCENT"]
 		if (typeof unit.custom.RSMana != 'object'){
 			root.log('no unit mana detected, setting up unit.')
@@ -264,10 +263,7 @@ var RS_ManaControl = {
 		}
 		else{
 			var choice = Types[index]
-			root.log(choice)
 			var Cost = typeof obj.Cost === 'number' ? obj.Cost : 0
-			root.log(Cost)
-			root.log(unit.custom.RSMana.Current)
 			if (choice === "DRAIN"){
 				unit.custom.RSMana.Current = Math.min(unit.custom.RSMana.Max,Math.max(0, unit.custom.RSMana.Current - Cost))
 			}
@@ -794,7 +790,6 @@ SimulateMove._endMove = function(unit) {
 		manacopy.Cost = Math.round(unit.getMostResentMov()*manacopy.Cost)
 		unit.custom.CopyCatMana = manacopy
 		unit.custom.CopyCatMana.Current = unit.custom.RSMana.Current - manacopy.Cost;
-		root.log("+++"+unit.custom.CopyCatMana.Current)
 	}
 };
 
