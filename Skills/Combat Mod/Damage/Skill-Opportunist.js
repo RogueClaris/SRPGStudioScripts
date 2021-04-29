@@ -11,7 +11,7 @@ DamageCalculator.calculateAttackPower = function(active, passive, weapon, isCrit
 	var skill = SkillControl.getPossessionCustomSkill(active,'Opportunist')
 	
 	if (skill && !AttackChecker.isCounterattack(active, passive)){
-		pow += skill.custom.boost;
+		pow += skill.custom.Bonus;
 	}
 	
 	return pow;
