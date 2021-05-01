@@ -40,26 +40,37 @@
 (function() {
 var alias3 = MapLayer.drawUnitLayer;
 MapLayer.drawUnitLayer = function() {
-	alias3.call(this);
 	var i, j;
-	for (i = 0; i < CurrentMap.getWidth(); i++){
-		for (j = 0; j < CurrentMap.getHeight(); j++){
-			var Terrain = PosChecker.getTerrainFromPos(i, j)
-			var session = root.getCurrentSession();
-			var mx = session.getScrollPixelX();
-			var my = session.getScrollPixelY();
-			if (Terrain.custom.StealthCL){
-				var img = Terrain.getMapchipImage()
-				if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
-					if (my > 0){
-						img.drawParts(LayoutControl.getPixelX(i), root.getMapchipWidth() * j - my, Terrain.custom.x * root.getMapchipWidth(), Terrain.custom.y * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight())
-					}
-					else{
-						img.drawParts(LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), Terrain.custom.x * root.getMapchipWidth(), Terrain.custom.y * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight())
+	var session = root.getCurrentSession();
+	var mx = session.getScrollPixelX();
+	var my = session.getScrollPixelY();
+	if (root.getMetaSession().global.ThirdLayerArray == null || this._mx !== mx || this._my !== my){
+		root.getMetaSession().global.ThirdLayerArray = []
+		for (i = 0; i < CurrentMap.getWidth(); i++){
+			for (j = 0; j < CurrentMap.getHeight(); j++){
+				var Terrain = PosChecker.getTerrainFromPos(i, j)
+				if (Terrain.custom.StealthCL){
+					this._mx = mx
+					this._my = my
+					var img = Terrain.getMapchipImage()
+					var handle = session.getMapChipGraphicsHandle(i, j, true);
+					if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
+						if (my > 0){
+							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), root.getMapchipWidth() * j - my, handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
+						}
+						else{
+							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
+						}
 					}
 				}
 			}
 		}
+	}
+	alias3.call(this);
+	var t;
+	var arr = root.getMetaSession().global.ThirdLayerArray
+	for (t = 0; t < arr.length; ++t){
+		arr[t][0].drawParts(arr[t][1], arr[t][2], arr[t][3], arr[t][4], arr[t][5], arr[t][6])
 	}
 };
 
@@ -67,25 +78,17 @@ var DrawScrollCL = UnitRenderer.drawScrollUnit;
 UnitRenderer.drawScrollUnit = function(unit, x, y, unitRenderParam) {
 	DrawScrollCL.call(this, unit, x, y, unitRenderParam);
 	var i, j;
-	for (i = 0; i < CurrentMap.getWidth(); i++){
-		for (j = 0; j < CurrentMap.getHeight(); j++){
-			var Terrain = PosChecker.getTerrainFromPos(i, j)
-			var session = root.getCurrentSession();
-			var mx = session.getScrollPixelX();
-			var my = session.getScrollPixelY();
-			if (Terrain.custom.StealthCL){
-				var img = Terrain.getMapchipImage()
-				if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
-					if (my > 0){
-						img.drawParts(LayoutControl.getPixelX(i), root.getMapchipWidth() * j - my, Terrain.custom.x * root.getMapchipWidth(), Terrain.custom.y * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight())
-					}
-					else{
-						img.drawParts(LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), Terrain.custom.x * root.getMapchipWidth(), Terrain.custom.y * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight())
-					}
-				}
-			}
-		}
+	var t;
+	var arr = root.getMetaSession().global.ThirdLayerArray
+	for (t = 0; t < arr.length; ++t){
+		arr[t][0].drawParts(arr[t][1], arr[t][2], arr[t][3], arr[t][4], arr[t][5], arr[t][6])
 	}
 };
+
+var EraseArrCL = ScriptCall_Load;
+ScriptCall_Load = function(){
+	EraseArrCL.call(this);
+	delete root.getMetaSession().global.ThirdLayerArray
+}
 
 })();
