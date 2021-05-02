@@ -3,17 +3,8 @@
   Go into the terrain tab of database, and set the following custom parameters,
   
   {
-	  StealthCL:true,
-	  x:5,
-	  y:1
+	  StealthCL:true
   }
-  
-  The "x" and "y" parameters should be the number of tiles from the left and number
-  of tiles down for the image on the tileset. For example, putting units behind the
-  runtime package white "pillar" mapchip would be x:2 and y:1
-  
-  Be aware that this can only support one image per terrain. That is the major drawback
-  of this plugin.
   
   I was able to make this by modifying a plugin created by SapphireSoft,
   "highlevel-outside.js". It causes terrain with the right custom parameters
@@ -56,7 +47,7 @@ MapLayer.drawUnitLayer = function() {
 					var handle = session.getMapChipGraphicsHandle(i, j, true);
 					if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
 						if (my > 0){
-							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), root.getMapchipWidth() * j - my, handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
+							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j) - my, handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
 						}
 						else{
 							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
