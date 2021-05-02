@@ -53,8 +53,9 @@ TurnChangeMapStart.doLastAction = function() {
 var TimeAlterCountUp = DefineControl.getMaxSaveFileCount;
 DefineControl.getMaxSaveFileCount = function(){
 	var count = typeof root.getMetaSession().global.SaveCountRS === 'number' ? root.getMetaSession().global.SaveCountRS : TimeAlterCountUp.call(this)
-	if (count > 90){
-		count = 90;
+	var count2 = typeof root.getMetaSession().global.MaxReloadsRS === 'number' ? root.getMetaSession().global.MaxReloadsRS : 3;
+	if (count + count2 > 99){
+		count -= count2;
 	}
 	return count;
 }
