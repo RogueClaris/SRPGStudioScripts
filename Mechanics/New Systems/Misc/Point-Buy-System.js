@@ -69,9 +69,9 @@ ExperienceControl.plusGrowth = function(unit, growthArray) {
 		}
 	}
 	var Points = unit.custom.StatPoints
-	var ClassGain = typeof unit.getClass().custom.StatPointGain == 'number' ? unit.getClass().custom.StatPointGain : 50
-	var UnitBonus = typeof unit.custom.StatPointGain == 'number' ? unit.custom.StatPointGain : 0
-	if (typeof Points != 'number'){
+	var ClassGain = typeof unit.getClass().custom.StatPointGain === 'number' ? unit.getClass().custom.StatPointGain : 50
+	var UnitBonus = typeof unit.custom.StatPointGain === 'number' ? unit.custom.StatPointGain : 0
+	if (typeof Points !== 'number'){
 		unit.custom.StatPoints = 0
 	}
 	unit.custom.StatPoints += ClassGain
@@ -144,13 +144,13 @@ var PointBuyScreen = defineObject(BaseScreen,
 		var mode = this.getCycleMode();
 		var result = MoveResult.CONTINUE;
 		
-		if (mode == PointBuyMode.TOP){
+		if (mode === PointBuyMode.TOP){
 			result = this._moveTop();
 		}
-		else if (mode == PointBuyMode.INPUT){
+		else if (mode === PointBuyMode.INPUT){
 			result = this._moveInput();
 		}
-		else if (mode == PointBuyMode.CONFIRM){
+		else if (mode === PointBuyMode.CONFIRM){
 			result = this._moveConfirm();
 		}
 		
@@ -162,7 +162,7 @@ var PointBuyScreen = defineObject(BaseScreen,
 		var y = LayoutControl.getRelativeY(8);
 		this._paramWindow.drawWindow(x, y)
 		this._viewWindow.drawWindow(x + this._paramWindow.getWindowWidth(), y)
-		if (this.getCycleMode() == PointBuyMode.INPUT){
+		if (this.getCycleMode() === PointBuyMode.INPUT){
 			this._inputWindow.drawWindow(x + this._paramWindow.getWindowWidth(), y + this._viewWindow.getWindowHeight())
 		}
 	},
@@ -241,10 +241,10 @@ var ParameterWindow = defineObject(BaseWindow,
 	moveWindowContent: function() {
 		var input = this._scrollbar.moveInput()
 		var result = MoveResult.CONTINUE;
-		if (input == ScrollbarInput.SELECT){
+		if (input === ScrollbarInput.SELECT){
 			result = PointBuyMode.INPUT
 		}
-		else if (input == ScrollbarInput.CANCEL){
+		else if (input === ScrollbarInput.CANCEL){
 			result = MoveResult.END;
 		}
 		return result;
@@ -332,11 +332,11 @@ var ParameterScrollbar = defineObject(ItemListScrollbar,
 		var cost = this._getCost(unit, type)
 		var isMax = amount >= max
 		TextRenderer.drawText(x, y, object.getParameterName()+":", -1, ColorValue.KEYWORD, font)
-		if (!isMax && cost != -1){
-			NumberRenderer.drawNumber(x+40, y-6, amount)
-			TextRenderer.drawText(x+49, y+2, ",", -1, 0xffffff, font)
+		if (!isMax && cost !== -1){
+			NumberRenderer.drawNumber(x+40, y-3, amount)
+			TextRenderer.drawText(x+49, y, ",", -1, 0xffffff, font)
 			TextRenderer.drawText(x+60, y, "Increase Cost:", -1, ColorValue.KEYWORD, font)
-			NumberRenderer.drawNumber(x+175, y-6, cost)
+			NumberRenderer.drawNumber(x+175, y-3, cost)
 		}
 		else{
 			NumberRenderer.drawNumberColor(x+40, y-6, amount, 1, 255)
@@ -391,7 +391,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 	
 	checkCost: function(i){
 		var Points = this._unit != null ? this._unit.custom.StatPoints : 0
-		if (typeof Points != 'number'){
+		if (typeof Points !== 'number'){
 			Points = 0
 			this._unit.custom.StatPoints = 0
 		}
@@ -417,16 +417,16 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 			return MoveResult.CANCEL;
 		}
 		
-		if (InputControl.isInputAction(InputType.UP)){
+		if (InputControl.isInputAction(InputType.UP) || MouseControl.isInputAction(MouseType.UPWHEEL)){
             this._exp += this._getCost(this._unit, this._param);
 			if (this._exp > this._max) {
 				this._exp = 0;
 			}
 		}
-		else if (InputControl.isInputAction(InputType.DOWN)){
+		else if (InputControl.isInputAction(InputType.DOWN) || MouseControl.isInputAction(MouseType.DOWNWHEEL)){
 			this._exp -= this._getCost(this._unit, this._param);
 			if (this._exp < 0){
-				this._exp = 0;
+				this._exp = this._max;
 			}
 		}
 		
@@ -440,14 +440,11 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 	_isExperienceValueAvailable: function() {
 		var Points = this._unit != null ? this._unit.custom.StatPoints : 0
 		var cost = this._getCost(this._unit, this._param)
-		if (cost == -1){
+		if (cost === -1){
 			return false;
 		}
-		if (typeof Points != 'number'){
+		if (typeof Points !== 'number'){
 			Points = 0
-		}
-		if (Points < 10) {
-			return false;
 		}
 		if (Points < this._getCost(this._unit, this._param)){
 			return false;
@@ -464,7 +461,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 			this.changeCycleMode(BonusInputWindowMode.INPUT);
 		}
 		else {
-			this._exp = 0;
+			this._exp = -1;
 			this.changeCycleMode(BonusInputWindowMode.NONE);
 		}
 	},
@@ -507,15 +504,17 @@ var PointViewWindow = defineObject(BaseWindow,
 	},
 	
 	drawWindowContent: function(x, y) {
-		var Points = typeof this._unit.custom.StatPoints == 'number' ? this._unit.custom.StatPoints : 0
+		var Points = typeof this._unit.custom.StatPoints === 'number' ? this._unit.custom.StatPoints : 0
 		var Font = root.getBaseData().getFontList().getData(0)
 		var Color = ColorValue.KEYWORD
-		TextRenderer.drawText(x, y, "Points:", -1, Color, Font)
-		NumberRenderer.drawNumber(x+75, y-6, Points)
+		TextRenderer.drawText(x, y-3, "Points: ", -1, Color, Font)
+		NumberRenderer.drawNumber(x+TextRenderer.getTextWidth("Points: ", Font)+5, y-6, Points)
 	},
 	
 	getWindowWidth: function(){
-		return 250
+		var Points = typeof this._unit.custom.StatPoints === 'number' ? this._unit.custom.StatPoints.toString() : "0"
+		var Font = root.getBaseData().getFontList().getData(0)
+		return TextRenderer.getTextWidth("Points: "+Points, Font) + 35
 	},
 	
 	getWindowHeight: function(){

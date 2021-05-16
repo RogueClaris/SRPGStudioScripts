@@ -20,7 +20,6 @@ NormalAttackOrderBuilder._startVirtualAttack = function() {
 	var virtualActive, virtualPassive, isDefaultPriority;
 	var unitSrc = this._attackInfo.unitSrc;
 	var unitDest = this._attackInfo.unitDest;
-	var i;
 	var DefenseUnit = null;
 	var DefenseUnitArray = [];
 	var TempDefenseUnit;
