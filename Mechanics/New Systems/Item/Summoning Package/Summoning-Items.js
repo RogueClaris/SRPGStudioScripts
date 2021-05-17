@@ -287,12 +287,14 @@ var SummonItemUse = defineObject(BaseItemUse,
 			}
 		}
 		this._targetUnit = root.getObjectGenerator().generateUnitFromBaseUnit(targetUnit);
+		this._baseUnit = targetUnit;
 		this._targetUnit.setInvisible(true)
 		
 		// For item use with AI, the position is not always initialized.
 		if (this._targetPos === null) {
 			this._targetPos = SummonControl.getSummonPos(itemTargetInfo.unit, this._targetUnit, itemTargetInfo.item);
 			if (this._targetPos === null) {
+				this._itemUseParent.disableItemDecrement();
 				return EnterResult.NOTENTER;
 			}
 		}
@@ -362,6 +364,23 @@ var SummonItemUse = defineObject(BaseItemUse,
 		this._targetUnit.setMapX(this._targetPos.x);
 		this._targetUnit.setMapY(this._targetPos.y);
 		this._targetUnit.setInvisible(false);
+		if (typeof this._itemUseParent.getItemTargetInfo().item.custom.RandomAmount === 'number'){
+			var item = this._itemUseParent.getItemTargetInfo().item
+			var extraSummons = Math.floor(Math.random()*item.custom.RandomAmount)
+			var i = 0;
+			var unit, pos;
+			while (i < extraSummons){
+				pos = PosChecker.getNearbyPos(this._targetUnit, this._targetUnit);
+				if (pos !== null){
+					unit = root.getObjectGenerator().generateUnitFromBaseUnit(this._baseUnit);
+					unit.setInvisible(true);
+					unit.setMapX(pos.x);
+					unit.setMapY(pos.y);
+					unit.setInvisible(false);
+				}
+				++i;
+			}
+		}
 	},
 	
 	_moveFocus: function() {

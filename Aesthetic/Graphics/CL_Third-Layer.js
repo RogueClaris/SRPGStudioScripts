@@ -31,27 +31,23 @@
 (function() {
 var alias3 = MapLayer.drawUnitLayer;
 MapLayer.drawUnitLayer = function() {
-	var i, j;
-	var session = root.getCurrentSession();
-	var mx = session.getScrollPixelX();
-	var my = session.getScrollPixelY();
-	if (root.getMetaSession().global.ThirdLayerArray == null || this._mx !== mx || this._my !== my){
-		root.getMetaSession().global.ThirdLayerArray = []
-		for (i = 0; i < CurrentMap.getWidth(); i++){
-			for (j = 0; j < CurrentMap.getHeight(); j++){
-				var Terrain = PosChecker.getTerrainFromPos(i, j)
-				if (Terrain.custom.StealthCL){
-					this._mx = mx
-					this._my = my
-					var img = Terrain.getMapchipImage()
-					var handle = session.getMapChipGraphicsHandle(i, j, true);
-					if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
-						if (my > 0){
-							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j) - my, handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
-						}
-						else{
-							root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), handle.getSrcX() * root.getMapchipWidth(), handle.getSrcY() * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
-						}
+	var i, j, t, arr, Terrain, mx, my, session, img, handle;
+	session = root.getCurrentSession();
+	mx = session.getScrollPixelX();
+	my = session.getScrollPixelY();
+	root.getMetaSession().global.ThirdLayerArray = []
+	for (i = 0; i < CurrentMap.getWidth(); i++){
+		for (j = 0; j < CurrentMap.getHeight(); j++){
+			Terrain = PosChecker.getTerrainFromPos(i, j)
+			if (Terrain.custom.StealthCL){
+				img = Terrain.getMapchipImage()
+				handle = session.getMapChipGraphicsHandle(i, j, true);
+				if (MapView.isVisiblePixel(i*root.getMapchipWidth(), (j*root.getMapchipHeight())+root.getMapchipHeight())){
+					if (my > 0){
+						root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j) - my, handle.getSrcX() * root.getMapchipWidth(), (handle.getSrcY() + img.getAnimationLoopIndex()) * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
+					}
+					else{
+						root.getMetaSession().global.ThirdLayerArray.push([img, LayoutControl.getPixelX(i), (root.getMapchipWidth() * j), handle.getSrcX() * root.getMapchipWidth(), (handle.getSrcY() + img.getAnimationLoopIndex()) * root.getMapchipHeight(), root.getMapchipWidth(), root.getMapchipHeight()])
 					}
 				}
 			}
@@ -59,7 +55,7 @@ MapLayer.drawUnitLayer = function() {
 	}
 	alias3.call(this);
 	var t;
-	var arr = root.getMetaSession().global.ThirdLayerArray
+	arr = root.getMetaSession().global.ThirdLayerArray
 	for (t = 0; t < arr.length; ++t){
 		arr[t][0].drawParts(arr[t][1], arr[t][2], arr[t][3], arr[t][4], arr[t][5], arr[t][6])
 	}
