@@ -3,12 +3,33 @@ Hello and welcome to the Cooldown Skills script!
 This script enables you to set Skills that will
 only activate when X many hits have been dealt
 or received. To setup a Skill to do this, set
-the activation percent to Absolute, 0%, and give
-it the custom parameters {Cooldown:true,MaxCharge:#},
-where # is any non-decimal number.
+give it the following custom parameters:
+
+{
+	Cooldown:true,
+	MaxCharge:#
+}
+
+As long as # is a non-decimal number, it will
+work.
 
 Enjoy the script!
--Lady Rena, 8/27/2019
+
+=Plugin Author=
+-RogueClaris
+
+=License=
+-Free use. Go wild.
+
+=Script History=
+-August 27th, 2019: Initial release.
+-May 18th, 2021: Fixed multiple bugs.
+
+=Compatibility note=
+If replacing the Skill Interaction,
+use createObjectEx. It is needed to
+access the unit from the SkillInfoWindow
+object. Thank you. -RogueClaris
 */
 
 
@@ -16,6 +37,7 @@ CooldownControl = {
 	
 	_setupUnit: function(unit){
 		var list1, list2, list3, list4, skill, i, j, k, l, m;
+		unit.custom.CooldownObj = []
 		list1 = unit.getSkillReferenceList();
 		list2 = ItemControl.getEquippedWeapon(unit) !== null ? ItemControl.getEquippedWeapon(unit).getSkillReferenceList() : null;
 		list3 = unit.getClass().getSkillReferenceList();
@@ -36,54 +58,32 @@ CooldownControl = {
 		for (i = 0; i < list4.length; i++){
 			if (list4[i].custom.Cooldown){
 				if (typeof list4[i].custom.CurCharge !== 'number'){
-					list4[i].custom.CurCharge = list4[i].custom.MaxCharge;
+					unit.custom.CooldownObj.push([list4[i].getName(), list4[i].getId(), list4[i].custom.MaxCharge, list4[i].custom.MaxCharge])
 				}
 			}
 		}
 	},
 	
 	_decreaseCooldown: function(unit){
-		var list1, list2, list3, list4, skill, i, j, k, l, m;
-		list1 = unit.getSkillReferenceList();
-		list2 = ItemControl.getEquippedWeapon(unit) !== null ? ItemControl.getEquippedWeapon(unit).getSkillReferenceList() : null;
-		list3 = unit.getClass().getSkillReferenceList();
-		list4 = []
-		for (j = 0; j < list1.getTypeCount(); j++){
-			list4.push(list1.getTypeData(j))
+		if (typeof unit.custom.CooldownObj != 'object'){
+			this._setupUnit(unit);
 		}
-		if (list2 !== null){
-			for (k = 0; k < list2.getTypeCount(); k++){
-				list4.push(list2.getTypeData(k))
+		var i;
+		var arr = unit.custom.CooldownObj;
+		for (i = 0; i < arr.length; ++i){
+			if (typeof arr[i][2] === 'number' && arr[i][2] > 0){
+				arr[i][2]--
 			}
-		}
-		
-		for (l = 0; l < list3.getTypeCount(); l++){
-			list4.push(list3.getTypeData(l))
-		}
-		
-		for (i = 0; i < list4.length; i++){
-			if (list4[i].custom.Cooldown){
-				if (typeof list4[i].custom.CurCharge !== 'number'){
-					list4[i].custom.CurCharge = list4[i].custom.MaxCharge;
-					list4[i].custom.CurCharge -= 1
-				}
-				else if (typeof list4[i].custom.CurCharge === 'number' && list4[i].custom.CurCharge > 0){
-					if (list4[i].custom.CurCharge > list4[i].custom.MaxCharge){
-						list4[i].custom.CurCharge = list4[i].custom.MaxCharge;
-					}
-					list4[i].custom.CurCharge -= 1
-				}
+			else{
+				arr[i][2] = arr[i][3]
 			}
 		}
 	},
 	
 	_resetAllCooldowns: function(){
-		var type = UnitType.PLAYER;
-		this._resetArmyCooldowns(type)
-		type = UnitType.ENEMY;
-		this._resetArmyCooldowns(type)
-		type = UnitType.ALLY;
-		this._resetArmyCooldowns(type)
+		this._resetArmyCooldowns(UnitType.PLAYER)
+		this._resetArmyCooldowns(UnitType.ENEMY)
+		this._resetArmyCooldowns(UnitType.ALLY)
 	},
 	
 	_resetArmyCooldowns: function(type){
@@ -112,31 +112,30 @@ CooldownControl = {
 	},
 	
 	_resetCooldown: function(unit){
-		var list1, list2, list3, list4, skill, i, j, k, l, m;
-		list1 = unit.getSkillReferenceList();
-		list2 = ItemControl.getEquippedWeapon(unit) !== null ? ItemControl.getEquippedWeapon(unit).getSkillReferenceList() : null;
-		list3 = unit.getClass().getSkillReferenceList();
-		list4 = []
-		for (j = 0; j < list1.getTypeCount(); j++){
-			list4.push(list1.getTypeData(j))
+		if (typeof unit.custom.CooldownObj != 'object'){
+			this._setupUnit(unit);
 		}
-		
-		if (list2 !== null){
-			for (k = 0; k < list2.getTypeCount(); k++){
-				list4.push(list2.getTypeData(k))
+		var i;
+		var arr = unit.custom.CooldownObj;
+		for (i = 0; i < arr.length; ++i){
+			arr[i][2] = arr[i][3]
+		}
+	},
+	
+	_findSkill: function(unit, skill){
+		if (skill == null || unit == null){
+			return null;
+		}
+		else if (typeof unit.custom.CooldownObj != 'object'){
+			this._setupUnit(unit);
+		}
+		var i;
+		var arr = unit.custom.CooldownObj;
+		for (i = 0; i < arr.length; ++i){
+			if (arr[i][0] === skill.getName() && arr[i][1] === skill.getId()){
+				return arr[i]
 			}
 		}
-		
-		for (l = 0; l < list3.getTypeCount(); l++){
-			list4.push(list3.getTypeData(l))
-		}
-		
-		for (i = 0; i < list4.length; i++){
-			if (list4[i].custom.Cooldown && typeof list4[i].custom.CurCharge === 'number'){
-				delete list4[i].custom.CurCharge
-			}
-		}
-		
 	}
 }
 
@@ -151,15 +150,18 @@ var CDS002 = SkillRandomizer._isSkillInvokedInternal;
 SkillRandomizer._isSkillInvokedInternal = function(active, passive, skill) {
 	var result = CDS002.call(this,active,passive,skill);
 	var skilltype = skill.getSkillType();
+	var skill2 = CooldownControl._findSkill(active, skill)
 	
-	if (typeof skill.custom.CurCharge === 'number' && skill.custom.CurCharge === 0){
-		skill.custom.CurCharge = skill.custom.MaxCharge
-		if (skilltype === SkillType.CONTINUOUSATTACK){
-			skill.custom.CurCharge += skill.getSkillValue()
+	if (skill2 !== null){
+		if (skill2[2] === 0){
+			skill2[2] = skill2[3]
+			if (skilltype === SkillType.CONTINUOUSATTACK){
+				skill2[2] += skill.getSkillValue()
+			}
+			return true;
 		}
-		return true;
+		return false;
 	}
-	
 	return result;
 };
 
@@ -171,9 +173,17 @@ DamageControl.reduceHp = function(unit, damage){
 	}
 };
 
+var AddUnitExCL0 = UnitMenuBottomWindow.setUnitMenuData;
+UnitMenuBottomWindow.setUnitMenuData = function(){
+	AddUnitExCL0.call(this);
+	this._skillInteraction = createObjectEx(SkillInteraction, this);
+}
+
 var CDS005 = SkillInfoWindow.getWindowHeight;
 SkillInfoWindow.getWindowHeight = function(){
-	if (this._skill !== null && this._skill.custom.Cooldown){
+	var skill = CooldownControl._findSkill(this.getParentInstance().getParentInstance()._unit, this._skill)
+	if (skill !== null){
+		this._unit = this.getParentInstance().getParentInstance()._unit;
 		return CDS005.call(this) + ItemInfoRenderer.getSpaceY()
 	}
 	return CDS005.call(this);
@@ -182,11 +192,12 @@ SkillInfoWindow.getWindowHeight = function(){
 var CDS006 = SkillInfoWindow.drawWindowContent;
 SkillInfoWindow.drawWindowContent = function(x,y){
 	CDS006.call(this,x,y);
-	if (this._skill.custom.Cooldown){
+	var skill = CooldownControl._findSkill(this._unit, this._skill)
+	if (skill !== null){
 		var textui = this.getWindowTextUI();
 		var color = textui.getColor();
 		var font = textui.getFont();
-		var countdown = typeof this._skill.custom.CurCharge === 'number' ? this._skill.custom.CurCharge : this._skill.custom.MaxCharge;
+		var countdown = skill[2]
 		if (this._isInvocationType()){
 			y += ItemInfoRenderer.getSpaceY()
 		}
