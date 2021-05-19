@@ -1,110 +1,90 @@
 /*
 Hello and welcome to the Revival Herb plugin!
 To create an automatic revival item, simply
-create an unusable item with the custom
-parameters set as follows:
+create any item with the following custom
+parameter:
 
 {
 	Revival:true
 }
 
-It's as simple as that - putting this item on
-a non-enemy unit will revive them when they
-die!
+This will then use the item's animation and
+filter flag to determine if the item can be
+used to revive the unit in question.
 
 Enjoy the plugin!
 -Lady Rena, April 10th, 2019
+=Plugin History=
+April 10th, 2019:
+-Original Release
+May 19th, 2021:
+-Updated to use different animations.
+-Updated to allow enemy use.
+-Updated to decrease instead of delete the item.
 
 */
 
-var Albatross = {
-	Wing: null
+var ReviveControl = defineObject(BaseObject,
+{	
+	getItemFromUnit: function(unit){
+		var count = UnitItemControl.getPossessionItemCount(unit)
+		var i, item, temp;
+		i = 0;
+		item = null
+		while (i < count && item === null){
+			temp = UnitItemControl.getItem(unit,i)
+			if (temp != null && temp.custom.Revival && FilterControl.isBestUnitTypeAllowed(unit.getUnitType(), unit.getUnitType(), temp.getFilterFlag())){
+				item = UnitItemControl.getItem(unit,i);
+			}
+			if (item === null){
+				++i
+			}
+		}
+		return item;
+	}
 }
+);
 
-DamageEraseFlowEntry._doAction = function(damageData) {
+var AlbatrossWingCL1 = DamageEraseFlowEntry._doAction;
+DamageEraseFlowEntry._doReviveAction = function(damageData){
+	var Dynamo = root.getEventGenerator()
 	var targetUnit = damageData.targetUnit;
-	var i;
-	var item = null;
-	var count = UnitItemControl.getPossessionItemCount(targetUnit)
-	var generator = createObject(DynamicEvent);
-	var Dynamo = generator.acquireEventGenerator();
-	for (i = 0; i < count; i++){
-		if (UnitItemControl.getItem(targetUnit,i).custom.Revival){
-			item = UnitItemControl.getItem(targetUnit,i);
-			break;
-		}
-	}
-	if (damageData.curHp > 0) {
-		targetUnit.setHp(damageData.curHp);
-	}
-	else {
-		if (targetUnit.getUnitType() !== UnitType.ENEMY && item !== null){
-			Dynamo.hpRecovery(targetUnit,root.queryAnime('classchange'),ParamBonus.getMhp(targetUnit),RecoveryType.MAX,true)
-			Dynamo.execute()
-			ItemControl.deleteItem(targetUnit,item);
-			targetUnit.setHp(ParamBonus.getMhp(targetUnit))
-			Albatross.Wing = true;
-		}
-		else{
-			targetUnit.setHp(0);
-			DamageControl.setDeathState(targetUnit);
-		}
-	}
+	var item = ReviveControl.getItemFromUnit(targetUnit);
+	Dynamo.hpRecovery(targetUnit,item.getItemAnime(),ParamBonus.getMhp(targetUnit),RecoveryType.MAX,false)
+	Dynamo.execute()
+	ItemControl.decreaseItem(targetUnit,item);
 };
 
+var AlbatrossWingCL0 = DamageEraseFlowEntry.enterFlowEntry;
 DamageEraseFlowEntry.enterFlowEntry = function(damageData) {
-	this._damageData = damageData;
-	
-	if (damageData.isHit) {
-		this._doAction(damageData);
-		if (Albatross.Wing !== null){
-			return EnterResult.NOTENTER;
-		}
+	var targetUnit = damageData.targetUnit;
+	var item = ReviveControl.getItemFromUnit(targetUnit);
+	if (item === null){
+		return AlbatrossWingCL0.call(this, damageData);
 	}
-	
-	if (this.isFlowSkip() || damageData.curHp > 0) {
-		return EnterResult.NOTENTER;
+	else{
+		this._doReviveAction(damageData);
 	}
-	
-	this._damageData.targetUnit.setInvisible(true);
-	
-	this._eraseCounter = createObject(EraseCounter);
-	
-	return EnterResult.OK;
+	return EnterResult.NOTENTER;
 };
 
 var RVHB001 = DamageControl.checkHp;
 DamageControl.checkHp = function(active, passive) {
 	var hp = passive.getHp();
 	var i;
-	var item = null;
-	var count = UnitItemControl.getPossessionItemCount(passive)
-	var generator = createObject(DynamicEvent);
-	var Dynamo = generator.acquireEventGenerator();
-	for (i = 0; i < count; i++){
-		if (UnitItemControl.getItem(passive,i).custom.Revival){
-			item = UnitItemControl.getItem(passive,i);
-			break;
-		}
-	}
+	var item = ReviveControl.getItemFromUnit(passive);
+	var Dynamo = root.getEventGenerator()
+	
 	if (hp > 0) {
 		return;
 	}
 	
-	if (FusionControl.getFusionAttackData(active) !== null) {
-		// For isLosted which will be called later, hp doesn't become 1 at this moment.
-		this.setCatchState(passive, false);
+	if (item != null){
+		Dynamo.hpRecovery(passive,item.getItemAnime(),ParamBonus.getMhp(passive),RecoveryType.MAX,false);
+		Dynamo.execute()
+		ItemControl.decreaseItem(passive,item);
 	}
-	else {
-		if (passive.getUnitType() !== UnitType.ENEMY && item !== null){
-			Dynamo.hpRecovery(passive,root.queryAnime('classchange'),ParamBonus.getMhp(passive),RecoveryType.MAX,true)
-			Dynamo.execute()
-			ItemControl.deleteItem(passive,item);
-			passive.setHp(ParamBonus.getMhp(passive))
-			Albatross.Wing = true;
-		}
-		else{
-			RVHB001.call(this,active,passive);
-		}
+	else{
+		RVHB001.call(this,active,passive);
 	}
 };
