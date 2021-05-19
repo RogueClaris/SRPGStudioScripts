@@ -36,6 +36,9 @@ object. Thank you. -RogueClaris
 CooldownControl = {
 	
 	_setupUnit: function(unit){
+		if (unit == null){
+			return false;
+		}
 		var list1, list2, list3, list4, skill, i, j, k, l, m;
 		unit.custom.CooldownObj = []
 		list1 = unit.getSkillReferenceList();
@@ -62,11 +65,14 @@ CooldownControl = {
 				}
 			}
 		}
+		return true;
 	},
 	
 	_decreaseCooldown: function(unit){
 		if (typeof unit.custom.CooldownObj != 'object'){
-			this._setupUnit(unit);
+			if (!this._setupUnit(unit)){
+				return;
+			}
 		}
 		var i;
 		var arr = unit.custom.CooldownObj;
@@ -113,7 +119,9 @@ CooldownControl = {
 	
 	_resetCooldown: function(unit){
 		if (typeof unit.custom.CooldownObj != 'object'){
-			this._setupUnit(unit);
+			if (!this._setupUnit(unit)){
+				return;
+			}
 		}
 		var i;
 		var arr = unit.custom.CooldownObj;
@@ -127,7 +135,9 @@ CooldownControl = {
 			return null;
 		}
 		else if (typeof unit.custom.CooldownObj != 'object'){
-			this._setupUnit(unit);
+			if (!this._setupUnit(unit)){
+				return;
+			}
 		}
 		var i;
 		var arr = unit.custom.CooldownObj;

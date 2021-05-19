@@ -40,6 +40,9 @@ TurnCheckCL = function(unit, skill){
 	if (!skill){
 		return false;
 	}
+	if (!unit){
+		return false;
+	}
 	var weapon = ItemControl.getEquippedWeapon(unit)
 	if (weapon !== null && typeof skill.custom.WeaponTypeCL === 'object' && skill.custom.WeaponTypeCL.indexOf(weapon.getWeaponType().getName().toUpperCase) === -1){
 		root.log('weapon type fail')
@@ -73,8 +76,10 @@ TurnCheckCL = function(unit, skill){
 }
 var blows0 = SkillRandomizer.isCustomSkillInvokedInternal;
 SkillRandomizer.isCustomSkillInvokedInternal = function(active, passive, skill, keyword) {
-	if (keyword === 'RogueBlowCL' || keyword === "RogueStanceCL" || keyword === "RogueRiposteCL") {
-		return this._isSkillInvokedInternal(active, passive, skill);
+	if (active && passive) {
+		if (keyword === 'RogueBlowCL' || keyword === "RogueStanceCL" || keyword === "RogueRiposteCL"){
+			return this._isSkillInvokedInternal(active, passive, skill);
+		}
 	}
 	return blows0.call(this, active, passive, skill, keyword);
 };
