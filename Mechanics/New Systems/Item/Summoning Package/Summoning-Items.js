@@ -5,30 +5,41 @@ but this script enables a custom type of Item that can summon a Unit from the Pl
 This has no limit beyond the item's use limit. There is currently no code in place to limit the
 number of allies you - or the AI! - can summon. Yes, you read that properly - the AI can use them!
 
-In order for ENEMY units to use this, create an Event Enemy from the Player Unit they will be summoning.
-In order for ALLY units to use this, create an Event Ally from the Player Unit they will be summoning.
-For either Enemy or Ally summoners, the summoned units name must remain the same as in the player database.
+To use, do the following:
+-Create a reserved Player Database unit. Set them up as you want them to be summoned.
+-Create an item and set "item type" to Custom, with the keyword "RS_Summon".
+-Set the Custom Parameters as follows on the item:
 
-To create the item itself:
--Set "item type" to Custom, with the keyword "RS_Summon".
--Set the Custom Parameter as follows on the item: 
-	{UnitID:#}, where # is the ID of the Player you are copying from the Database.
--Optionally, set another Custom Parameter as follows on the item:
-	{RARITY:#}
+{
+	UnitID:#, 
+	RARITY:#,
+	SummonedText:"Daniel",
+	RS_SummonCost:#, 
+	RS_SummonPercent:true,
+	RandomAmount:5
+}
 
-If RARITY is set, it will increase the item score for the AI by RARITY times two, making certain Summon
-items more likely to be used than others. If it is not set, it is treated as 0.
+UnitID is necessary, where # is the ID of the Player you are copying from the Database.
 
-Further, you may set two more Custom Parameters on the item as follows:
-	{RS_SummonCost:#}, where # is an amount of HP to pay.
-	{RS_SummonPercent:true} or {RS_SummonPercent:false}, whether or not to pay the HP as a percentage.
-	
+RARITY is optional, and if set, it will increase the item score for the AI by RARITY times
+two, making certain Summon items more likely to be used than others. If it is not set, it
+is treated as 0. It will be drawn on the item's info to indicate how powerful the staff is, as well.
+
+RS_SummonCost is an amount of HP to pay when casting a Summon. This may be set to a percent with
+RS_SummonPercent:true
+
 If RS_SummonPercent is set to true, then RS_SummonCost will be divided by 100, then multiplied by
 your unit's max HP, then rounded before being subtracted from their current. In short, if you set
 it the above two parameters to 15 and true, you will pay 15% of a unit's Max HP to summon.
 
+RandomAmount adds an additional amount of summons to the summoning pool. In the example, it is set
+to 5. This will summon 0-5 additional units.
+
+SummonedText is optional. It will be displayed on the item as "Summoned", showing what it brings
+to the map.
+
 That should be everything. Please enjoy the script.
--Lady Rena, June 14th, 2020.
+-Rogue Claris, May 20th, 2021 (Updated)
 */
 
 var SI001 = ItemControl.isItemUsable;
@@ -237,53 +248,11 @@ var SummonItemUse = defineObject(BaseItemUse,
 		this._itemUseParent = itemUseParent;
 		this._targetPos = itemTargetInfo.targetPos;
 		this._unit = itemTargetInfo.unit;
-		if (this._unit.getUnitType() === UnitType.PLAYER){
-			var TargetList = root.getBaseData().getPlayerList()
-			var i, targetUnit;
-			for (i = 0; i < TargetList.getCount(); i++){
-				if (TargetList.getData(i).getId() === itemTargetInfo.item.custom.UnitID){
-					targetUnit = TargetList.getData(i);
-				}
-			}
-		}
-		else if (this._unit.getUnitType() === UnitType.ENEMY){
-			var MapInfo = root.getCurrentSession().getCurrentMapInfo()
-			var TargetList = MapInfo.getListFromUnitGroup(UnitGroup.ENEMYEVENT)
-			var UnitList = root.getBaseData().getPlayerList()
-			var i, j
-			Temp = null;
-			for (j = 0; j < UnitList.getCount(); j++){
-				if (UnitList.getData(j).getId() === itemTargetInfo.item.custom.UnitID){
-					Temp = UnitList.getData(j);
-					break;
-				}
-			}
-			if (Temp !== null){
-				for (i = 0; i < TargetList.getCount(); i++){
-					if (TargetList.getData(i).getName() === Temp.getName()){
-						targetUnit = TargetList.getData(i)
-					}
-				}
-			}
-		}
-		else{
-			var MapInfo = root.getCurrentSession().getCurrentMapInfo()
-			var TargetList = MapInfo.getListFromUnitGroup(UnitGroup.ALLYEVENT)
-			var UnitList = root.getBaseData().getPlayerList()
-			var i, j
-			Temp = null;
-			for (j = 0; j < UnitList.getCount(); j++){
-				if (UnitList.getData(j).getId() === itemTargetInfo.item.custom.UnitID){
-					Temp = UnitList.getData(j);
-					break;
-				}
-			}
-			if (Temp !== null){
-				for (i = 0; i < TargetList.getCount(); i++){
-					if (TargetList.getData(i).getName() === Temp.getName()){
-						targetUnit = TargetList.getData(i)
-					}
-				}
+		var TargetList = root.getBaseData().getPlayerList()
+		var i, targetUnit;
+		for (i = 0; i < TargetList.getCount(); i++){
+			if (TargetList.getData(i).getId() === itemTargetInfo.item.custom.UnitID){
+				targetUnit = TargetList.getData(i);
 			}
 		}
 		this._targetUnit = root.getObjectGenerator().generateUnitFromBaseUnit(targetUnit);
@@ -323,11 +292,15 @@ var SummonItemUse = defineObject(BaseItemUse,
 		var Anime = root.queryAnime('easydamage');
 		var Gen = Dynamo.acquireEventGenerator();
 		if (!isPercent){
-			Gen.damageHit(Unit, Anime, Math.floor(Cost), DamageType.FIXED, Unit, false);
+			if (Math.floor(Cost) !== 0){
+				Gen.damageHit(Unit, Anime, Math.floor(Cost), DamageType.FIXED, Unit, false);
+			}
 		}
 		else{
 			Cost = Math.floor(RealBonus.getMhp(Unit)*Cost/100);
-			Gen.damageHit(Unit, Anime, Math.floor(Cost), DamageType.FIXED, Unit, false);
+			if (Math.floor(Cost) !== 0){
+				Gen.damageHit(Unit, Anime, Math.floor(Cost), DamageType.FIXED, Unit, false);
+			}
 		}
 		Gen.execute()
 	},
@@ -364,6 +337,10 @@ var SummonItemUse = defineObject(BaseItemUse,
 		this._targetUnit.setMapX(this._targetPos.x);
 		this._targetUnit.setMapY(this._targetPos.y);
 		this._targetUnit.setInvisible(false);
+		var generator = root.getEventGenerator()
+		if (this._unit.getUnitType() !== UnitType.PLAYER){
+			generator.unitAssign(this._targetUnit, this._unit.getUnitType())
+		}
 		if (typeof this._itemUseParent.getItemTargetInfo().item.custom.RandomAmount === 'number'){
 			var item = this._itemUseParent.getItemTargetInfo().item
 			var extraSummons = Math.floor(Math.random()*item.custom.RandomAmount)
@@ -377,10 +354,12 @@ var SummonItemUse = defineObject(BaseItemUse,
 					unit.setMapX(pos.x);
 					unit.setMapY(pos.y);
 					unit.setInvisible(false);
+					generator.unitAssign(unit, this._unit.getUnitType())
 				}
 				++i;
 			}
 		}
+		generator.execute()
 	},
 	
 	_moveFocus: function() {
@@ -500,6 +479,54 @@ var SummonItemAI = defineObject(BaseItemAI,
 	_isUnitTypeAllowed: function(unit, targetUnit) {
 		// Confirm the different type of unit from myself.
 		return true;
+	}
+}
+);
+
+var SI006 = ItemPackageControl.getCustomItemInfoObject;
+ItemPackageControl.getCustomItemInfoObject = function(item, keyword){
+	
+	if (keyword === "RS_Summon"){
+		return SummonItemInfo
+	}
+	
+	return SI006.call(this,item,keyword)
+};
+
+var SummonItemInfo = defineObject(BaseItemInfo,
+{
+	drawItemInfoCycle: function(x, y) {
+		ItemInfoRenderer.drawKeyword(x, y, "Summoning Item");
+		y += ItemInfoRenderer.getSpaceY();
+		
+		this._drawValue(x, y);
+	},
+	
+	getInfoPartsCount: function() {
+		var count = 1;
+		if (typeof this._item.custom.SummonedText === 'string'){
+			++count;
+		}
+		if (typeof this._item.custom.Rarity === 'number'){
+			++count;
+		}
+		return count;
+	},
+	
+	_drawValue: function(x, y) {
+		var TUI = root.queryTextUI('default_window');
+		var FONT = TUI.getFont();
+		var COLOR = TUI.getColor();
+		if (typeof this._item.custom.SummonedText === 'string'){
+			ItemInfoRenderer.drawKeyword(x, y, "Summoned");
+			TextRenderer.drawText(x + TextRenderer.getTextWidth("Summoned", FONT) + 5, y, this._item.custom.SummonedText, -1, COLOR, FONT);
+			y += ItemInfoRenderer.getSpaceY();
+		}
+		if (typeof this._item.custom.Rarity === 'number'){
+			ItemInfoRenderer.drawKeyword(x, y, "Rarity");
+			x += TextRenderer.getTextWidth("Rarity", FONT) + 5
+			TextRenderer.drawText(x, y, this._item.custom.Rarity.toString()+"\u2606", -1, COLOR, FONT);
+		}
 	}
 }
 );

@@ -426,11 +426,20 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		else if (InputControl.isInputAction(InputType.DOWN) || MouseControl.isInputAction(MouseType.DOWNWHEEL)){
 			this._exp -= this._getCost(this._unit, this._param);
 			if (this._exp < 0){
-				this._exp = this._max;
+				this._exp = this._getCostMax(this._unit, this._param);
 			}
 		}
 		
 		return MoveResult.CONTINUE;
+	},
+	
+	_getCostMax: function(unit, param){
+		var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, param, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, param);
+		var Cost = Math.floor((100-Growth)/10);
+		if (Cost <= 0){
+			return -1;
+		}
+		return Math.floor(Growth/Cost)*unit.custom.StatPoints
 	},
 	
 	_drawInput: function(x, y) {
