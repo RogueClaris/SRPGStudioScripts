@@ -37,9 +37,9 @@ var RSGA0 = ExperienceControl._createGrowthArray;
 ExperienceControl._createGrowthArray = function(unit){
 	var GA = RSGA0.call(this, unit)
 	if (root.getMetaSession().global.EnableLevels){
-		return GA
+		return GA;
 	}
-	return []
+	return [];
 };
 
 LevelupView._moveAnime = function() {
@@ -48,10 +48,6 @@ LevelupView._moveAnime = function() {
 			this.changeCycleMode(LevelupViewMode.GROWTH);
 		}
 		else{
-			var Dynamo = createObject(DynamicEvent);
-			var Gen = Dynamo.acquireEventGenerator();
-			Gen.wait(47)
-			Gen.execute()
 			return MoveResult.END;
 		}
 	}
@@ -404,8 +400,6 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 	_moveInput: function() {
 		var max1 = Math.floor((this._unit.custom.StatPoints / this._getCost(this._unit, this._param)) * this._getCost(this._unit, this._param))
 		var max2 = Math.floor((ParamGroup.getMaxValue(this._unit, this._param) - ParamGroup.getLastValue(this._unit, this._param, ItemControl.getEquippedWeapon(this._unit))) * this._getCost(this._unit,this._param))
-		root.log("max1: "+max1)
-		root.log("max2: "+max2)
 		this._max = Math.min(max1, max2);
 		if (InputControl.isSelectAction()) {
 			this._cost = this._exp
@@ -433,13 +427,14 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		return MoveResult.CONTINUE;
 	},
 	
-	_getCostMax: function(unit, param){
-		var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, param, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, param);
+	_getCostMax: function(unit, i){
+		var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, i, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, i);
 		var Cost = Math.floor((100-Growth)/10);
 		if (Cost <= 0){
 			return -1;
 		}
-		return Math.floor(Growth/Cost)*unit.custom.StatPoints
+		var remainder = unit.custom.StatPoints % Cost
+		return unit.custom.StatPoints - remainder
 	},
 	
 	_drawInput: function(x, y) {
@@ -517,7 +512,7 @@ var PointViewWindow = defineObject(BaseWindow,
 		var Font = root.getBaseData().getFontList().getData(0)
 		var Color = ColorValue.KEYWORD
 		TextRenderer.drawText(x, y-3, "Points: ", -1, Color, Font)
-		NumberRenderer.drawNumber(x+TextRenderer.getTextWidth("Points: ", Font)+5, y-6, Points)
+		NumberRenderer.drawRightNumber(x+TextRenderer.getTextWidth("Points: ", Font)+5, y-6, Points)
 	},
 	
 	getWindowWidth: function(){
