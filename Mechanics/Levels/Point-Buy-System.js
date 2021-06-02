@@ -450,9 +450,6 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		if (typeof Points !== 'number'){
 			Points = 0
 		}
-		if (Points < this._getCost(this._unit, this._param)){
-			return false;
-		}
 		
 		return true;
 	},
@@ -460,8 +457,8 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 	_setUnit: function(unit) {
 		this._unit = unit;
 		if (this._isExperienceValueAvailable()) {
-			this._exp = 0
-			this._max = unit.custom.StatPoints
+			this._exp = 0;
+			this._max = unit.custom.StatPoints;
 			this.changeCycleMode(BonusInputWindowMode.INPUT);
 		}
 		else {
