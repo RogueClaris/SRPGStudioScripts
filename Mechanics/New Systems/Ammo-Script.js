@@ -13,21 +13,9 @@ ItemControl.isWeaponAvailable = function(unit, item) {
 
 var AMMO2 = ItemControl.lostItem;
 ItemControl.lostItem = function(unit, item) {
-	var weaponType = item.getWeaponType();
-	
-	if (weaponType.getBreakedWeapon() !== null) {
-		// If "Broken Weapon" is set, set the value to show broken state.
+	if (item.custom.Ammo){
 		item.setLimit(WeaponLimitValue.BROKEN);
 		return;
 	}
-	
-	if (item.custom.Ammo){
-		item.setLimit(WeaponLimitValue.BROKEN);
-	}
-	else if (unit === null) {
-		StockItemControl.cutStockItem(StockItemControl.getIndexFromItem(item));
-	}
-	else {
-		this.deleteItem(unit, item);
-	}
+	AMMO2.call(this, unit, item);
 };
