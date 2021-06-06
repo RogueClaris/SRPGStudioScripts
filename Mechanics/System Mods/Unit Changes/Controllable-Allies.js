@@ -1,73 +1,67 @@
 /*
 Mark a non-player unit with the custom parameter
 {Controllable:true} and you will be able to control
-them on the player phase. They will still act during
-their faction's phase, though.
+them on the player phase.
 
--Lady Rena, October 20th, 2019.
+-Rogue Claris
+
+=Original Release: October 20th, 2019=
+=Updated Release: June 6th, 2021=
 
 */
 
+var RCCA01 = MapSequenceArea._isTargetMovable;
 MapSequenceArea._isTargetMovable = function() {
-	if (!StateControl.isTargetControllable(this._targetUnit)) {
-		return false;
+	var result = RCCA01.call(this);
+	//make sure they can be controlled, are an ally, and have the custom parameter.
+	if (StateControl.isTargetControllable(this._targetUnit) && this._targetUnit.getUnitType() === UnitType.ALLY && !this._targetUnit.isWait() && this._targetUnit.custom.Controllable) {
+		return true;
 	}
 	
-	// The player who doesn't wait allows moving.
-	return this._targetUnit.getUnitType() === UnitType.PLAYER && !this._targetUnit.isWait() || this._targetUnit.custom.Controllable && !this._targetUnit.isWait();
+	// return the original result if the above check isn't satisfied.
+	return result;
 };
 
+var RCCA02 = MapSequenceCommand._doLastAction;
 MapSequenceCommand._doLastAction = function() {
-	var i;
-	var unit = null;
-	var list = PlayerList.getSortieList();
-	var count = list.getCount();
-	var list2 = EnemyList.getAliveList();
-	var count2 = list2.getCount()
-	var list3 = AllyList.getAliveList();
-	var count3 = list3.getCount()
-	// Check it because the unit may not exist by executing a command.
-	for (i = 0; i < count; i++) {
-		if (this._targetUnit === list.getData(i)) {
-			unit = this._targetUnit;
-			break;
+	if (this._targetUnit.getUnitType() === UnitType.ALLY){
+		var i;
+		var unit = null;
+		var list = AllyList.getAliveList();
+		var count = list.getCount()
+		// Check it because the unit may not exist by executing a command.
+		for (i = 0; i < count; i++) {
+			if (this._targetUnit === list.getData(i)) {
+				unit = this._targetUnit;
+				break;
+			}
 		}
-	}
-	for (i = 0; i < count2; i++){
-		if (this._targetUnit === list2.getData(i)){
-			unit = this._targetUnit;
-			break;
-		}
-	}
-	for (i = 0; i < count3; i++){
-		if (this._targetUnit === list3.getData(i)){
-			unit = this._targetUnit;
-		}
-	}
-	// Check if the unit doesn't die and still exists.
-	if (unit !== null) {
-		if (this._unitCommandManager.getExitCommand() !== null) {
-			if (!this._unitCommandManager.isRepeatMovable()) {
-				// If move again is not allowed, don't move again.
-				this._targetUnit.setMostResentMov(ParamBonus.getMov(this._targetUnit));
+		// Check if the unit doesn't die and still exists.
+		if (unit !== null) {
+			if (this._unitCommandManager.getExitCommand() !== null) {
+				if (!this._unitCommandManager.isRepeatMovable()) {
+					// If move again is not allowed, don't move again.
+					this._targetUnit.setMostResentMov(ParamBonus.getMov(this._targetUnit));
+				}
+				
+				// Set the wait state because the unit did some action.
+				this._parentTurnObject.recordPlayerAction(true);
+				return 0;
+			}
+			else {
+				// Get the position and cursor back because the unit didn't act.
+				this._parentTurnObject.setPosValue(unit);
 			}
 			
-			// Set the wait state because the unit did some action.
-			this._parentTurnObject.recordPlayerAction(true);
-			return 0;
+			// Face forward.
+			unit.setDirection(DirectionType.NULL);
 		}
 		else {
-			// Get the position and cursor back because the unit didn't act.
-			this._parentTurnObject.setPosValue(unit);
+			this._parentTurnObject.recordPlayerAction(true);
+			return 1;
 		}
 		
-		// Face forward.
-		unit.setDirection(DirectionType.NULL);
+		return 2;
 	}
-	else {
-		this._parentTurnObject.recordPlayerAction(true);
-		return 1;
-	}
-	
-	return 2;
+	return RCCA02.call(this)
 };
