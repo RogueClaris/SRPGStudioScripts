@@ -28,14 +28,3 @@ FilterControl.isReverseUnitTypeAllowed = function(unit, targetUnit){
 	}
 	return result;
 };
-
-var RSU3 = FilterControl.isBestUnitTypeAllowed;
-FilterControl.isBestUnitTypeAllowed = function(unit, targetUnit, filterFlag){
-	var result = RSU3.call(this, unit, targetUnit, filterFlag);
-	var skill = SkillControl.getPossessionCustomSkill(targetUnit, "Untouchable")
-	var bypass = SkillControl.getPossessionCustomSkill(unit, "Touchable")
-	if (skill && !bypass){
-		return false;
-	}
-	return result;
-};
