@@ -23,7 +23,7 @@ AttackEvaluator.HitCritical.isHit = function(virtualActive, virtualPassive, atta
 var ResetHitCL = TurnChangeStart.doLastAction;
 TurnChangeStart.doLastAction = function(){
 	ResetHitCL.call(this);
-	var list = this._getPlayerList()
+	var list = PlayerList.getSortieList()
 	var i, unit;
 	for (i = 0; i < list.getCount(); ++i){
 		unit = list.getData(i)

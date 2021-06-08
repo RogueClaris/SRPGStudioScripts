@@ -7,6 +7,18 @@ be able to hurt them a skill with the keyword
 with "Untouchable".
 */
 
+var RSU0 = PosSelector.getSelectorTarget;
+PosSelector.getSelectorTarget = function(isIndexArray){
+	var result = RSU0.call(this, isIndexArray);
+	if (result != null && SkillControl.getPossessionCustomSkill(result, "Untouchable")){
+		if (SkillControl.getPossessionCustomSkill(this._unit, "Touchable"){
+			return result;
+		}
+		return null;
+	}
+	return result;
+}
+
 var RSU1 = FilterControl.isUnitTypeAllowed;
 FilterControl.isUnitTypeAllowed = function(unit, targetUnit){
 	var result = RSU1.call(this, unit, targetUnit);
