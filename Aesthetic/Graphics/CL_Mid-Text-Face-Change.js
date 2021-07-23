@@ -49,8 +49,11 @@ BaseMessageView.drawMessageView = function(isActive, pos){
 	var index = textLine.currentIndex;
 	var parser = analyzer2._textParser;
 	var bindex = textLine.baseIndex;
-	if (analyzer1._parserInfo.changeFaceId && analyzer1._parserInfo.changeFaceIndex && index === analyzer1._parserInfo.changeFaceIndex){
-		this._faceId = analyzer1._parserInfo.changeFaceId;
+	if (analyzer1._parserInfo.changeFaceId && analyzer1._parserInfo.changeFaceIndex){
+		index = Math.max(0, index - ("\fc[]".length - analyzer1._parserInfo.changeFaceId.toString().length));
+		if (bindex+index === analyzer1._parserInfo.changeFaceIndex){
+			this._faceId = analyzer1._parserInfo.changeFaceId;
+		}
 	}
 	MidTextFaceChangeCL1.call(this, isActive, pos);
 };
@@ -59,17 +62,10 @@ var MidTextFaceChangeCL2 = TextParser.startReplace;
 TextParser.startReplace = function(text, parserInfo){
 	var checkIndex = text.search(ControlVariable.FaceChange.getKey())
 	if (checkIndex !== -1){
-		root.log('index found')
-		root.log(checkIndex)
 		var findNum = text.match(ControlVariable.FaceChange.getKey())
 		parserInfo.changeFaceIndex = checkIndex;
 		if (findNum !== null){
-			root.log('number found')
-			root.log(findNum[1])
 			parserInfo.changeFaceId = findNum[1];
-			parserInfo.changeFaceIndex -= findNum[1].toString().length;
-			parserInfo.changeFaceIndex -= "\fc[]".length
-			root.log(parserInfo.changeFaceIndex)
 		}
 	}
 	return MidTextFaceChangeCL2.call(this, text, parserInfo);
