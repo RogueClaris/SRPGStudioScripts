@@ -11,7 +11,9 @@
  * -RogueClaris
  *
  * =Plugin History=
+ * July 24th, 2021: Updated for more dynamic control detection.
  * July 22nd, 2021: Released.
+ *
  */
 
 var MidTextFaceChangeCL0 = TextParser._configureVariableObject;
@@ -33,7 +35,7 @@ ControlVariable.FaceChange = defineObject(BaseControlVariable,
 	},
 	
 	getKey: function() {
-		var key = /\\fc\[(\d+)\]/
+		var key = /\\fc\[(\d+)\]/i
 		
 		return key;
 	}
