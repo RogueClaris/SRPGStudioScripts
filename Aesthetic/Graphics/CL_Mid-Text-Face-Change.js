@@ -35,7 +35,7 @@ ControlVariable.FaceChange = defineObject(BaseControlVariable,
 	},
 	
 	getKey: function() {
-		var key = /\\fc\[(\d+)\]/
+		var key = /\\fc\[(\d+)\]/i
 		
 		return key;
 	}
