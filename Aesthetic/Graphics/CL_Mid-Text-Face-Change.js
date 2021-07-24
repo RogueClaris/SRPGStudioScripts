@@ -35,7 +35,7 @@ ControlVariable.FaceChange = defineObject(BaseControlVariable,
 	},
 	
 	getKey: function() {
-		var key = /\\fc\[(\d+)\]/i
+		var key = /\\fc\[(\d+)\]/
 		
 		return key;
 	}
@@ -52,9 +52,9 @@ BaseMessageView.drawMessageView = function(isActive, pos){
 	var parser = analyzer2._textParser;
 	var bindex = textLine.baseIndex;
 	if (analyzer1._parserInfo.changeFaceId && analyzer1._parserInfo.changeFaceIndex){
-		index = Math.max(0, index - ("\fc[]".length - analyzer1._parserInfo.changeFaceId.toString().length));
+		index = Math.max(0, index - (analyzer1._parserInfo.changeFaceId[0].toString().length));
 		if (bindex+index === analyzer1._parserInfo.changeFaceIndex){
-			this._faceId = analyzer1._parserInfo.changeFaceId;
+			this._faceId = analyzer1._parserInfo.changeFaceId[1];
 		}
 	}
 	MidTextFaceChangeCL1.call(this, isActive, pos);
@@ -67,7 +67,7 @@ TextParser.startReplace = function(text, parserInfo){
 		var findNum = text.match(ControlVariable.FaceChange.getKey())
 		parserInfo.changeFaceIndex = checkIndex;
 		if (findNum !== null){
-			parserInfo.changeFaceId = findNum[1];
+			parserInfo.changeFaceId = findNum;
 		}
 	}
 	return MidTextFaceChangeCL2.call(this, text, parserInfo);
