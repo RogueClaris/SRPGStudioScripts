@@ -46,7 +46,7 @@ BaseMessageView.drawMessageView = function(isActive, pos){
 	var analyzer1 = this._messageAnalyzer;
 	var analyzer2 = this._messageAnalyzer.getCoreAnalyzer();
 	//get the current line of text's object,
-	var textLine = analyzer2._textLineArray[analyzer2._rowCount].text;
+	var textLine = analyzer2._textLineArray[analyzer2._rowCount];
 	//and its text.
 	var txt = textLine.text;
 	//and the current index.
@@ -70,6 +70,9 @@ BaseMessageView.drawMessageView = function(isActive, pos){
 			//check the index of it in the backup text.
 			cindex = backup.indexOf(poppy)
 			//if the change index is not -1, then...
+			root.log(cindex)
+			root.log(index === undefined)
+			root.log(bindex === undefined)
 			if (cindex !== -1 && cindex === index+bindex){
 				//shift out the first element of the ORIGINAL array to change what we're accessing, and...
 				changeFace.shift()
