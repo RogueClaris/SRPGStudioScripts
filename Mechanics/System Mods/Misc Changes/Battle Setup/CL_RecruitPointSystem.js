@@ -18,8 +18,8 @@ The script will do the rest.
 var RecruitPointSystemCL0 = SortieSetting.nonsortieUnit;
 SortieSetting.nonsortieUnit = function(unit) {
 	var curPoints = root.getMetaSession().global.SortiePointsCL === "number" ? root.getMetaSession().global.SortiePointsCL : 0;
-	if ((curPoints - unit.getClass().custom.SortieCostCL) > 0){
-		curPoints -= unit.getClass().custom.SortieCostCL;
+	if ((curPoints - unit.getClass().getClassType().custom.SortieCostCL) > 0){
+		curPoints -= unit.getClass().getClassType().custom.SortieCostCL;
 		root.getMetaSession().global.SortiePointsCL = curPoints;
 	}
 	else{
@@ -34,10 +34,10 @@ SortieSetting._sortieUnit = function(unit) {
 	var CurMap = root.getCurrentSession().getCurrentMapInfo();
 	var maxPoints = CurMap.custom.MaxSortiePointsCL;
 	var curPoints = typeof root.getMetaSession().global.SortiePointsCL === "number" && root.getMetaSession().global.SortiePointsCL > 0 ? root.getMetaSession().global.SortiePointsCL : 0;
-	if ((curPoints + unit.getClass().custom.SortieCostCL) >= maxPoints){
+	if ((curPoints + unit.getClass().getClassType().custom.SortieCostCL) >= maxPoints){
 		return false;
 	}
-	curPoints += unit.getClass().custom.SortieCostCL;
+	curPoints += unit.getClass().getClassType().custom.SortieCostCL;
 	root.getMetaSession().global.SortiePointsCL = curPoints;
 	return RecruitPointSystemCL1.call(this, unit);
 };
