@@ -45,16 +45,6 @@ var ReviveControl = defineObject(BaseObject,
 }
 );
 
-var AlbatrossWingCL1 = DamageEraseFlowEntry._doAction;
-DamageEraseFlowEntry._doReviveAction = function(damageData){
-	var Dynamo = root.getEventGenerator()
-	var targetUnit = damageData.targetUnit;
-	var item = ReviveControl.getItemFromUnit(targetUnit);
-	Dynamo.hpRecovery(targetUnit,item.getItemAnime(),ParamBonus.getMhp(targetUnit),RecoveryType.MAX,false)
-	Dynamo.execute()
-	ItemControl.decreaseItem(targetUnit,item);
-};
-
 var AlbatrossWingCL0 = DamageEraseFlowEntry.enterFlowEntry;
 DamageEraseFlowEntry.enterFlowEntry = function(damageData) {
 	var targetUnit = damageData.targetUnit;
@@ -63,7 +53,10 @@ DamageEraseFlowEntry.enterFlowEntry = function(damageData) {
 		return AlbatrossWingCL0.call(this, damageData);
 	}
 	else{
-		this._doReviveAction(damageData);
+		var Dynamo = root.getEventGenerator();
+		Dynamo.hpRecovery(targetUnit,item.getItemAnime(),ParamBonus.getMhp(targetUnit),RecoveryType.MAX,false)
+		Dynamo.execute();
+		ItemControl.decreaseItem(targetUnit,item);
 	}
 	return EnterResult.NOTENTER;
 };
