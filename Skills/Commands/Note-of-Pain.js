@@ -192,12 +192,17 @@
 				if (result === PosSelectorResult.SELECT) {
 					var targetUnit = this._posSelector.getSelectorTarget(true);
 					if (targetUnit != null && targetUnit !== unit && this._targetUnitArray.indexOf(targetUnit) === -1){
-						this._targetUnitArray.push(targetUnit);
-						this._redLightArray.push(CurrentMap.getIndex(targetUnit.getMapX(), targetUnit.getMapY()))
-						if (this._targetUnitArray.length === targetUnitList.length || this._targetUnitArray.length >= 5){
-							this._posSelector.endPosSelector();
-							this.changeCycleMode(NoteCommandMode.PAIN);
-							return MoveResult.CONTINUE;
+						if (FilterControl.isReverseUnitTypeAllowed(this.getCommandTarget(), targetUnit)){
+							this._targetUnitArray.push(targetUnit);
+							this._redLightArray.push(CurrentMap.getIndex(targetUnit.getMapX(), targetUnit.getMapY()))
+							if (this._targetUnitArray.length === targetUnitList.length || this._targetUnitArray.length >= 5){
+								this._posSelector.endPosSelector();
+								this.changeCycleMode(NoteCommandMode.PAIN);
+								return MoveResult.CONTINUE;
+							}
+						}
+						else{
+							MediaControl.soundDirect('operationblock')
 						}
 					}
 				}
@@ -247,8 +252,9 @@
 			},
 
 			_drawSelect: function () {
-				this._posSelector.drawPosSelector();
 				root.drawWavePanel(this._redLightArray, root.queryUI('range_panel'), 0)
+				this._posSelector.drawPosSelector();
+				
 			},
 
 			_drawAssist: function () {
@@ -269,7 +275,7 @@
 					y = CurrentMap.getY(index);
 					targetUnit = PosChecker.getUnitFromPos(x, y);
 					if (targetUnit !== null) {
-						if (unit !== targetUnit && targetUnit.getUnitType() === UnitType.ENEMY){
+						if (unit !== targetUnit && FilterControl.isReverseUnitTypeAllowed(unit, targetUnit)){
 							indexArrayNew.push(index);
 						}
 					}
@@ -278,7 +284,7 @@
 			},
 			
 			_isPosSelectable: function () {
-				return true;
+				return true
 			},
 
 			_getUnitFilter: function () {
