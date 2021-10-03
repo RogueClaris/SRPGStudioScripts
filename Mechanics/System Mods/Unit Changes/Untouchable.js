@@ -11,7 +11,7 @@ var RSU0 = PosSelector.getSelectorTarget;
 PosSelector.getSelectorTarget = function(isIndexArray){
 	var result = RSU0.call(this, isIndexArray);
 	if (result != null && SkillControl.getPossessionCustomSkill(result, "Untouchable")){
-		if (this._unit != null && SkillControl.getPossessionCustomSkill(this._unit, "Touchable"){
+		if (this._unit != null && SkillControl.getPossessionCustomSkill(this._unit, "Touchable")){
 			return result;
 		}
 		return null;
