@@ -450,34 +450,24 @@ var SummonItemAI = defineObject(BaseItemAI,
 		var ID = combination.item.custom.UnitID;
 		var Summoned, i;
 		var TargetList = root.getBaseData().getPlayerList()
-		for (i = 0; i < TargetList.getCount(); i++){
-			if (TargetList.getData(i).getId() === combination.item.custom.UnitID){
-				Summoned = TargetList.getData(i);
-			}
-		}
-		// Check if there is a position for combination.targetUnit to instantly move.
-		// The criteria is if the different type of unit from myself exists within a range of an instant move.
+		Summoned = TargetList.getDataFromId(combination.item.custom.UnitID)
+		// for (i = 0; i < TargetList.getCount(); i++){
+			// if (TargetList.getData(i).getId() === combination.item.custom.UnitID){
+				// Summoned = TargetList.getData(i);
+			// }
+		// }
 		return Summoned.getLv() + (n*2);
 	},
 	
 	getActionTargetType: function(unit, item) {
-		// Always return ActionTargetType.UNIT even though the item.getRangeType() is SelectionRangeType.SELFONLY.
 		return ActionTargetType.SINGLE;
 	},
 	
 	getUnitFilter: function(unit, item) {
-		// if (item.getRangeType() === SelectionRangeType.SELFONLY) {
-		// Search the opponent because self instantly moves towards the opponent.
 		return FilterControl.getReverseFilter(unit.getUnitType());
-		// }
-		// else {
-			// // Search the unit so as to make the unit instantly move.
-			// return FilterControl.getNormalFilter(unit.getUnitType());
-		// }
 	},
 	
 	_isUnitTypeAllowed: function(unit, targetUnit) {
-		// Confirm the different type of unit from myself.
 		return true;
 	}
 }
