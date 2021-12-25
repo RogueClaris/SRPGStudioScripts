@@ -17,9 +17,8 @@ ItemDropListScrollbar.drawScrollContent = function(x, y, object, isSelect, index
 	//check if the object at the current slot is the equipped weapon.
 	if (this.getObjectFromIndex(index) === ItemControl.getEquippedWeapon(this._unit)){
 		//acquire name width of the weapon.
-		var tWide = TextRenderer.getTextWidth(this.getObjectFromIndex(index).getName(), font) + 32
 		//draw the icon 32 pixels to the right of the weapon's name, indicating it is Equipped.
-		this._pic.drawStretchParts(x+tWide, (this.getObjectHeight()*index)+y, 24, 24, 24*4, 0, 24, 24)
+		this._pic.drawStretchParts(x-24, (this.getObjectHeight()*index)+y, 24, 24, 24*4, 0, 24, 24)
 	}
 }
 })();
