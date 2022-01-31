@@ -55,7 +55,7 @@ CombinationManager.getMoveTalkCombination = function(unit, x, y, moveAIType){
 		blockUnitArray = data.blockUnitArray;
 	}
 	combination = this.getTalkCombination(unit, simulator);
-	if (combination !== null) {
+	if (combination != null) {
 		combination.cource = moveCource
 		return combination;
 	}
@@ -91,12 +91,11 @@ AutoActionBuilder.buildCustomAction = function(unit, autoActionArray, keyword){
 		
 		// Check if it has already reached at goal.
 		combination = CombinationManager.getMoveTalkCombination(unit, x, y, MoveAIType.APPROACH);
-		if (combination === null) {
+		if (combination == null) {
 			return this._buildEmptyAction();
 		}
 		
 		this._pushMoveTalk(unit, autoActionArray, combination);
-		
 		return true;
 	}
 	return RSTALK2.call(this, unit, autoActionArray, keyword)
@@ -122,11 +121,25 @@ AutoActionBuilder._pushMoveTalk = function(unit, autoActionArray, combination) {
 	}
 };
 
+BaseCombinationCollector._getTargetListArrayRS = function(filter, misc) {
+	return FilterControl.getListArrayRS(filter);
+}
+
+FilterControl.getListArrayRS = function(filter) {
+	var listArray = [];
+	
+	listArray.push(PlayerList.getSortieList());
+	listArray.push(EnemyList.getAliveList());
+	listArray.push(AllyList.getAliveList());
+	
+	return listArray;	
+}
+
 BaseCombinationCollector._setUnitRangeCombinationRS = function(misc, filter, rangeMetrics){
 	var i, j, indexArray, list, targetUnit, targetCount, score, combination, aggregation;
 	var unit = misc.unit;
 	var filterNew = this._arrangeFilter(unit, filter);
-	var listArray = this._getTargetListArray(filterNew, misc);
+	var listArray = this._getTargetListArrayRS(filterNew, misc);
 	var listCount = listArray.length;
 	
 	if (misc.item !== null && !misc.item.isWeapon()) {
@@ -181,6 +194,7 @@ var RSTAA0 = BaseCombinationCollector._createAndPushCombination;
 BaseCombinationCollector._createAndPushCombinationRS = function(misc){
 	var combo = RSTAA0.call(this, misc);
 	combo.unit = misc.unit
+	combo.targetUnit = misc.targetUnit
 	combo.evt = misc.evt
 	return combo;
 };
@@ -206,14 +220,12 @@ CombinationCollector.Talk = defineObject(BaseCombinationCollector,
 				else if (unit === temp2){
 					misc.targetUnit = temp1
 				}
-				else{
-					continue;
-				}
+				root.log("do we ever get here?")
 				rangeMetrics = StructureBuilder.buildRangeMetrics();
 				rangeMetrics.startRange = 1
 				rangeMetrics.endRange = 1
 				misc.evt = evt
-				crowd = this._setUnitRangeCombinationRS(misc, FilterControl.getNormalFilter((UnitType.PLAYER || UnitType.ENEMY || UnitType.ALLY)), rangeMetrics)
+				var crowd = this._setUnitRangeCombinationRS(misc, FilterControl.getNormalFilter((UnitType.PLAYER || UnitType.ENEMY || UnitType.ALLY)), rangeMetrics)
 				return crowd
 			}
 		}
@@ -280,11 +292,14 @@ TalkAutoAction = defineObject(BaseAutoAction,
 	
 	_getDist: function(){
 		var x1, x2, y1, y2
-		x1 = this._unit.getMapX()
-		x2 = this._targetUnit.getMapX()
-		y1 = this._unit.getMapY()
-		y2 = this._targetUnit.getMapY()
-		return Math.abs((x1+y1)-(x2+y2))
+		if (this._unit != null){
+			x1 = this._unit.getMapX()
+			x2 = this._targetUnit.getMapX()
+			y1 = this._unit.getMapY()
+			y2 = this._targetUnit.getMapY()
+			return Math.abs((x1+y1)-(x2+y2))
+		}
+		return 2;
 	},
 	
 	moveAutoAction: function() {
