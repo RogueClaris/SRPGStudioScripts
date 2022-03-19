@@ -220,7 +220,6 @@ CombinationCollector.Talk = defineObject(BaseCombinationCollector,
 				else if (unit === temp2){
 					misc.targetUnit = temp1
 				}
-				root.log("do we ever get here?")
 				rangeMetrics = StructureBuilder.buildRangeMetrics();
 				rangeMetrics.startRange = 1
 				rangeMetrics.endRange = 1
