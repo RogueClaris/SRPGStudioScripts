@@ -1,9 +1,11 @@
 /*
-Give classes the following custom parameter:
+Give Class Types the following custom parameter:
 {
 	SortieCostCL:X
 }
 Where X is a whole number.
+You may also give it to Classes, and it will override Class Types.
+Additionally, you may give it to specific units, and that will override Classes.
 
 Give Maps the following custom parameter:
 {
@@ -15,37 +17,43 @@ This will prevent you from allocating more than Y points to that map in unit cos
 The script will do the rest.
 */
 
+var PointTracker = {
+	points: 0
+}
+
 var RecruitPointSystemCL0 = SortieSetting.nonsortieUnit;
 SortieSetting.nonsortieUnit = function(unit) {
-	var curPoints = root.getMetaSession().global.SortiePointsCL === "number" ? root.getMetaSession().global.SortiePointsCL : 0;
-	if ((curPoints - unit.getClass().getClassType().custom.SortieCostCL) > 0){
-		curPoints -= unit.getClass().getClassType().custom.SortieCostCL;
-		root.getMetaSession().global.SortiePointsCL = curPoints;
+	RecruitPointSystemCL0.call(this, unit);
+	var curPoints = PointTracker.points;
+	var pointCost = typeof unit.getClass().custom.SortieCostCL === "number" ? unit.getClass().custom.SortieCostCL : typeof unit.getClass().getClassType().custom.SortieCostCL === "number" ? typeof unit.getClass().getClassType().custom.SortieCostCL : 1;
+	if (typeof unit.custom.SortieCostCL === "number"){
+		pointCost = unit.custom.SortieCostCL;
 	}
-	else{
-		curPoints = 0;
-		root.getMetaSession().global.SortiePointsCL = curPoints;
-	}
-	return RecruitPointSystemCL0.call(this, unit);
+	curPoints = Math.max(0, curPoints-pointCost);
+	PointTracker.points = curPoints;
 };
 
 var RecruitPointSystemCL1 = SortieSetting._sortieUnit;
 SortieSetting._sortieUnit = function(unit) {
 	var CurMap = root.getCurrentSession().getCurrentMapInfo();
 	var maxPoints = CurMap.custom.MaxSortiePointsCL;
-	var curPoints = typeof root.getMetaSession().global.SortiePointsCL === "number" && root.getMetaSession().global.SortiePointsCL > 0 ? root.getMetaSession().global.SortiePointsCL : 0;
-	if ((curPoints + unit.getClass().getClassType().custom.SortieCostCL) >= maxPoints){
+	var curPoints = PointTracker.points
+	var pointCost = typeof unit.getClass().custom.SortieCostCL === "number" ? unit.getClass().custom.SortieCostCL : typeof unit.getClass().getClassType().custom.SortieCostCL === "number" ? typeof unit.getClass().getClassType().custom.SortieCostCL : 1;
+	if (typeof unit.custom.SortieCostCL === "number"){
+		pointCost = unit.custom.SortieCostCL;
+	}
+	if ((curPoints + pointCost) >= maxPoints){
 		return false;
 	}
-	curPoints += unit.getClass().getClassType().custom.SortieCostCL;
-	root.getMetaSession().global.SortiePointsCL = curPoints;
+	curPoints += pointCost;
+	PointTracker.points = curPoints;
 	return RecruitPointSystemCL1.call(this, unit);
 };
 
 var RecruitPointSystemCL2 = TurnChangeMapStart.doLastAction;
 TurnChangeMapStart.doLastAction = function(){
 	RecruitPointSystemCL2.call(this);
-	root.getMetaSession().global.SortiePointsCL = 0;
+	PointTracker.points = 0;
 }
 
 var RecruitPointSystemCL3 = UnitSortieScreen.drawScreenCycle;
@@ -76,7 +84,7 @@ var PointTotalCostWindow = defineObject(BaseWindow,
 	},
 	
 	drawWindowContent: function(x, y) {
-		var cur = root.getMetaSession().global.SortiePointsCL;
+		var cur = PointTracker.points;
 		var max = root.getCurrentSession().getCurrentMapInfo().custom.MaxSortiePointsCL;
 		var font = TextRenderer.getDefaultFont();
 		y -= 6;
