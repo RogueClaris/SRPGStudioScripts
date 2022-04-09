@@ -47,22 +47,20 @@ ExperienceControl._createGrowthArray = function(unit) {
 	//only do the first 11 parameters, as some plugins add parameters that are not compatible, such as weapon ranks.
 	var count = 11;
 	var growthArray = [];
-	//get the weapon.
-	var weapon = ItemControl.getEquippedWeapon(unit);
 	//get the precentage progress of unit's current level to max level.
 	var LvProgress = unit.getLv() / Miscellaneous.getMaxLv(unit)
 	//get the difference in current level and max level.
 	var LvDiff = Miscellaneous.getMaxLv(unit) - unit.getLv()
 	//add non-increasing stat names to this, separated by commas.
 	//this stops these stats from increasing regardless of levelups.
+	var StatNameArray = ['HP', 'Str', 'Mag', 'Skl', 'Spd', 'Lck', 'Def', 'Res', 'Mov', 'Wlv', 'Bld'];
 	var BannedStats = ["Mov","Bld"]
 	//check custom parameters of unit
 	if (typeof unit.custom.MaxStatsCL === 'object'){
 		//loop over count
 		for (i = 0; i < count; i++) {
-			//get param name
-			StatName = ParamGroup.getParameterName(i)
 			//complicated. bear with me. this is supposed to...
+			StatName = StatNameArray[i]
 			//1) check if custom param value is undefined, null, or neither.
 			//2) if undefined or null, max is 0.
 			//3) if neither, check if the custom param max is less than the in-engine max.
