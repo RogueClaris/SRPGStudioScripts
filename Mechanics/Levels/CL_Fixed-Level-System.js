@@ -43,6 +43,9 @@ October 28th, 2020:
 
 var CLFixed0 = ExperienceControl._createGrowthArray;
 ExperienceControl._createGrowthArray = function(unit) {
+	if (unit.custom.RandomLevelsCL){
+		CLFixed0.call(this, unit);
+	}
 	var i, n, max, StatProgress, StatCur, StatName;
 	//only do the first 11 parameters, as some plugins add parameters that are not compatible, such as weapon ranks.
 	var count = 11;
@@ -56,51 +59,61 @@ ExperienceControl._createGrowthArray = function(unit) {
 	var StatNameArray = ['HP', 'Str', 'Mag', 'Skl', 'Spd', 'Lck', 'Def', 'Res', 'Mov', 'Wlv', 'Bld'];
 	var BannedStats = ["Mov","Bld"]
 	//check custom parameters of unit
-	if (typeof unit.custom.MaxStatsCL === 'object'){
-		//loop over count
-		for (i = 0; i < count; i++) {
-			//complicated. bear with me. this is supposed to...
-			StatName = StatNameArray[i]
-			//1) check if custom param value is undefined, null, or neither.
-			//2) if undefined or null, max is 0.
-			//3) if neither, check if the custom param max is less than the in-engine max.
-			//4) if custom parameter max is less than the in-engine max, set it to custom parameter max.
-			//5) otherwise, use in-engine max.
-			max = unit.custom.MaxStatsCL[StatName] != null ? unit.custom.MaxStatsCL[StatName] <= ParamGroup.getMaxValue(unit, i) ? unit.custom.MaxStatsCL[StatName] : 0 : ParamGroup.getMaxValue(unit, i)
-			//get the current stat amount.
-			StatCur = ParamGroup.getUnitValue(unit, i)
-			//check progress. If stat is currently at max, it's 0.
-			//otherwise, subtract current from max.
-			StatProgress = StatCur < max ? max - StatCur : 0
-			//if it's not a banned stat...
-			if (BannedStats.indexOf(StatName) === -1){
-				//check if the level difference is 0.
-				//this means this is the final level up,
-				//and the system needs to max out your stats.
-				if (LvDiff === 0){
-					//set the difference equal to what is required to max out.
-					n = max-StatCur
-				}
-				else{
-					//complicated. bear with me. this is supposed to...
-					//1) Round up the difference between max and current stat...
-					//1a) ...as affected by the unit's progress from current level to max level.
-					//2) Round up after dividing the stat max by the max level.
-					//3) Choose the smaller number between the two.
-					n = Math.min(Math.ceil(max / Miscellaneous.getMaxLv(unit)), Math.ceil(StatProgress * LvProgress))
-				}
+	//loop over count
+	for (i = 0; i < count; i++) {
+		StatName = StatNameArray[i]
+		//This is...complicated, so bear with me. This code is supposed to...
+		//1) check if custom param value is undefined, null, or neither.
+		//2) if undefined or null, max is 0.
+		//3) if neither, check if the custom param max is less than the in-engine max.
+		//4) if custom parameter max is less than the in-engine max, set it to custom parameter max.
+		//5) otherwise, use in-engine max.
+		// check if unit has custom object MaxStatsCL
+		if (unit.custom.MaxStatsCL != null){
+			// set as max, unless it's greater than max possible value
+			if (unit.custom.MaxStatsCL[StatName] && unit.custom.MaxStatsCL[StatName] <= ParamGroup.getMaxValue(unit, i)){
+				max = unit.custom.MaxStatsCL[StatName]
+			}
+			// if greater than max, set to 0
+			else{
+				max = 0
+			}
+		// if not defined, use the max value
+		}
+		else{
+			root.log("???");
+			max = ParamGroup.getMaxValue(unit, i)
+			root.log(max);
+		}
+		//get the current stat amount.
+		StatCur = ParamGroup.getUnitValue(unit, i)
+		//check progress. If stat is currently at max, it's 0.
+		//otherwise, subtract current from max.
+		StatProgress = StatCur < max ? max - StatCur : 0
+		//if it's not a banned stat...
+		if (BannedStats.indexOf(StatName) === -1){
+			//check if the level difference is 0.
+			//this means this is the final level up,
+			//and the system needs to max out your stats.
+			if (LvDiff === 0){
+				//set the difference equal to what is required to max out.
+				n = max-StatCur
 			}
 			else{
-				//if it's banned it's 0. the end.
-				n = 0;
+				//complicated. bear with me. this is supposed to...
+				//1) Round up the difference between max and current stat...
+				//1a) ...as affected by the unit's progress from current level to max level.
+				//2) Round up after dividing the stat max by the max level.
+				//3) Choose the smaller number between the two.
+				n = Math.min(Math.ceil(max / Miscellaneous.getMaxLv(unit)), Math.ceil(StatProgress * LvProgress))
 			}
-			//set it.
-			growthArray[i] = n;
 		}
-	}
-	else{
-		//call otherwise.
-		CLFixed0.call(this,unit);
+		else{
+			//if it's banned it's 0. the end.
+			n = 0;
+		}
+		//set it.
+		growthArray[i] = n;
 	}
 	//return it.
 	return growthArray;
