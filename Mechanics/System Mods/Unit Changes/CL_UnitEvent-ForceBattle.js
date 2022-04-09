@@ -73,6 +73,7 @@ WeaponPosCommandCL = defineObject(MapPosChooseEventCommand,
 	},
 	
 	_doFlagAction: function(isSet) {
+		UnitEventChecker.setCancelFlag(isSet);
 	},
 	
 	_completeEventCommandMemberData: function() {
