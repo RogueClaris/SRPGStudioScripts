@@ -81,9 +81,7 @@ ExperienceControl._createGrowthArray = function(unit) {
 		// if not defined, use the max value
 		}
 		else{
-			root.log("???");
 			max = ParamGroup.getMaxValue(unit, i)
-			root.log(max);
 		}
 		//get the current stat amount.
 		StatCur = ParamGroup.getUnitValue(unit, i)
