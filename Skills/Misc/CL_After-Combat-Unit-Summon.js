@@ -1,5 +1,5 @@
 /* To use this script, create a custom skill with the keyword CL_Zomblade
- * and reate a Player Unit with the stats and items you want spawned.
+ * and create a Player Unit with the stats and items you want spawned.
  * Then, note the ID of the Player Unit. If you do not have Database IDs
  * visible, then do the following:
  *
