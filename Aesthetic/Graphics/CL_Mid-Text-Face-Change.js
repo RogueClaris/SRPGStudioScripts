@@ -69,10 +69,6 @@ BaseMessageView.drawMessageView = function(isActive, pos){
 		if (poppy){
 			//check the index of it in the backup text.
 			cindex = backup.indexOf(poppy)
-			//if the change index is not -1, then...
-			root.log(cindex)
-			root.log(index === undefined)
-			root.log(bindex === undefined)
 			if (cindex !== -1 && cindex === index+bindex){
 				//shift out the first element of the ORIGINAL array to change what we're accessing, and...
 				changeFace.shift()
