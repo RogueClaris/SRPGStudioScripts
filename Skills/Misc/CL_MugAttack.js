@@ -51,12 +51,22 @@ UnitCommand.Steal._moveTrade = function () {
 			var active = this.getCommandTarget()
 			var skillActive = SkillControl.getPossessionSkill(active, SkillType.STEAL)
 			if (active.getHp() > 0 && this._passive.getHp() > 0 && skillActive != null) {
-				MugAttackCL(active, this._passive, skillActive, null);
+				MugAttackCL(active, this._passive, skillActive);
 			}
 		}
 	}
 	return result;
 }
+
+var MugAttack2 = SkillAutoAction._enterSteal;
+SkillAutoAction._enterSteal = function(){
+	var result = MugAttack2.call(this);
+	var skillActive = SkillControl.getPossessionSkill(this._unit, SkillType.STEAL)
+	if (this._unit.getHp() > 0 && this._targetUnit.getHp() > 0 && skillActive != null) {
+		MugAttackCL(this._unit, this._targetUnit, skillActive);
+	}
+	return result;
+};
 
 var MugAttackCL = function (active, passive, skillActive) {
 	var generator = root.getEventGenerator();
@@ -98,7 +108,7 @@ var MugAttackCL = function (active, passive, skillActive) {
 		}
 	}
 	if (shouldExecute) {
-		generator.damageHit(passive, root.queryAnime("easydamage"), pain, obj.type, active, false);
+		generator.damageHit(passive, root.queryAnime("easydamage"), pain, obj.Type, active, false);
 		generator.execute();
 	}
 }
