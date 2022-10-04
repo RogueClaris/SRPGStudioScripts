@@ -118,7 +118,6 @@ Plugin released.
 				if (this._targetUnit.custom.GrowthArraySizeCL >= BestCount) {
 					returnString = typeof this._targetUnit.custom.BestGainMessageCL === "string" ? this._targetUnit.custom.BestGainMessageCL : "I never knew I had it in me...!"
 				}
-				root.log(this._targetUnit.custom.GrowthArraySizeCL);
 				return returnString;
 			},
 
