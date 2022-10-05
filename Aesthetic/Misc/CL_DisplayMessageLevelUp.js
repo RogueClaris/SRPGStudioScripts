@@ -13,6 +13,14 @@ Use the following custom parameters to add quotes to units upon level up:
 	BestGainMessageCL:"This message will show when you gain 7 or more stats by default."
 }
 
+If you want to play a voice line, append \u005Cvo[a] to the beginning of a parameter, like so:
+
+BestGainMessageCL:"\u005Cvo[a]This message will show when you gain 7 or more stats by default."
+
+This will cause a.ogg, a.mp3, or a.wav to play from \Materials\Voice depending on your settings.
+You must set up a folder named Voice. To do so, go to Database > Config 2 and click Voice Settings
+Then type Voice under the dialogue box for Voice Folder.
+
 To edit the amount of stats required for each message to show up, you may set the DefaultParameterCountCL
 found below.
 
