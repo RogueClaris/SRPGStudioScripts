@@ -55,23 +55,6 @@ Items given during Initial Data will all belong to the army you start with.
 If you wish to share the convoy, do not serialize.
 */
 
-var SAS001 = UnitSortieScreen._createUnitList
-UnitSortieScreen._createUnitList = function () {
-	var List = SAS001.call(this);
-	var CurMap = root.getCurrentSession().getCurrentMapInfo()
-	var List2 = null;
-	if (typeof CurMap.custom.Army === "string") {
-		List2 = PlayerList.getArmyList(CurMap.custom.Army);
-	}
-	else {
-		List2 = PlayerList.getArmyless();
-	}
-	if (List2 !== null && List2.getCount() > 0) {
-		return List2;
-	}
-	return List;
-};
-
 var SAS002 = SortieSetting._arrangeUnitPos;
 SortieSetting._arrangeUnitPos = function () {
 	var CurMap = root.getCurrentSession().getCurrentMapInfo()
@@ -227,6 +210,26 @@ SortieSetting.setSortieMark = function (index) {
 	}
 }
 
+PlayerList.getAliveList = function(){
+	var mapInfo = root.getCurrentSession().getCurrentMapInfo();
+	var restArea = root.getRestPreference().getActiveRestArea();
+	var army;
+	if (mapInfo === null) {
+		if (typeof restArea.custom.Army === "string") {
+			army = restArea.custom.Army;
+		}
+	}
+	else {
+		if (typeof mapInfo.custom.Army === "string") {
+			army = mapInfo.custom.Army;
+		}
+	}
+	if (typeof army == "string"){
+		return PlayerList.getArmyList(army);
+	}
+	return AllUnitList.getAliveList(this.getMainList());
+}
+
 PlayerList.getArmyList = function (ArmyParam) {
 	return AllUnitList.getArmyList(this.getMainList(), ArmyParam);
 };
@@ -234,18 +237,6 @@ PlayerList.getArmyList = function (ArmyParam) {
 AllUnitList.getArmyList = function (list, ArmyParam) {
 	var funcCondition = function (unit) {
 		return unit.getAliveState() === AliveType.ALIVE && FusionControl.getFusionParent(unit) === null && unit.custom.Army === ArmyParam;
-	};
-
-	return this.getList(list, funcCondition);
-};
-
-PlayerList.getArmyless = function () {
-	return AllUnitList.getArmyless(this.getMainList())
-};
-
-AllUnitList.getArmyless = function (list) {
-	var funcCondition = function (unit) {
-		return unit.getAliveState() === AliveType.ALIVE && FusionControl.getFusionParent(unit) === null && (unit.custom.Army === null || unit.custom.Army === undefined);
 	};
 
 	return this.getList(list, funcCondition);
