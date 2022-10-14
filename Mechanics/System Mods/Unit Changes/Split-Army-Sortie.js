@@ -287,7 +287,7 @@ ArmyControl = {
 			unit = List.getData(i)
 			if (unit.custom.Army !== null || unit.custom.Army !== undefined) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
-					item = UnitItemControl.getItem(unit, i);
+					item = UnitItemControl.getItem(unit, j);
 					item.custom.RSBackupArmy = unit.custom.Army;
 					delete item.custom.Army;
 				};
@@ -304,7 +304,7 @@ ArmyControl = {
 			unit = List.getData(i)
 			if (unit.custom.Army !== null || unit.custom.Army !== undefined) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
-					item = UnitItemControl.getItem(unit, i);
+					item = UnitItemControl.getItem(unit, j);
 					item.custom.RSBackupArmy = unit.custom.Army;
 					delete item.custom.Army;
 				};
@@ -321,7 +321,7 @@ ArmyControl = {
 			unit = List.getData(i)
 			if (typeof unit.custom.RSBackupArmy == 'string' && unit.custom.RSBackupArmy == param) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
-					item = UnitItemControl.getItem(unit, i);
+					item = UnitItemControl.getItem(unit, j);
 					item.custom.Army = unit.custom.RSBackupArmy;
 				}
 				unit.custom.Army = unit.custom.RSBackupArmy;
