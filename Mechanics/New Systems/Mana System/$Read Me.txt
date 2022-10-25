@@ -1,0 +1,95 @@
+Welcome to the RS Mana System, a plugin written by Rogue Claris.
+
+It has been written as an English-community accessible replacement to o-to's MP/SP script. 
+
+This is a "beta" release of the script. I have put together as many featureas as I can, but there is certainly more I can do.
+
+It sets up mana information on all units when installed, but the default move cost is 0 and it tries to auto-grow mana for units.
+
+There are several defaults in place if you don't set up a unit, however none of it is required for regular play.
+
+If a weapon doesn't have an RSMana object in its custom parameters, it won't use mana, simple as that. Same for items.
+
+In order to use the plugin, you must set custom parameters as follows:
+
+-Units & Classes:
+
+{
+	RSMana:{
+		Cost:5,
+		Type:"DRAIN",
+		Max:100,
+		Cap:300,
+		Regen:["PERCENT",20],
+		GrowthChance:40,
+		Increment:10
+	}
+}
+
+--Cost: The cost of movement. Set it negative to gain mana on move instead.
+--Type: The the way it drains - or "drains" - mana. Set it to DRAIN or DRAINPERCENT.
+----If it's DRAINPERCENT, Cost will act as a percent of max mana.
+----Can also be ADD or ADDPERCENT. This is another way you can gain mana on move.
+--Max: The maximum Mana a unit has. Default is 100.
+--Cap: The maximum "Maximum Mana" a unit can ever have. Default is 300.
+--Regen: How much mana a unit regains each turn. Default is 20% of max.
+----The first is a string, RAW or PERCENT, which determines how the mana is added
+----The second is how much mana to add.
+----If it's RAW, it adds the mana as a whole number.
+----If it's PERCENT, it adds the mana as a percent of max.
+
+-Weapons & Items:
+
+{
+	RSMana:{
+		Cost:10,
+		Gain:10,
+		Type:"DRAIN"
+	}
+}
+
+--Cost: How much it costs to swing this sword or chug this potion.
+--Gain: How much you gain by swinging this sword or chugging this potion.
+--Type: Can be ADD, ADDPERCENT, DRAIN, or DRAINPERCENT. These should be apparent in effect by now, but...
+----ADD increases mana by a raw number of Gain. Incompatible with DRAIN and DRAINPERCENT.
+----ADDPERCENT treats Gain as a percent of max mana. Incompatible with DRAIN and DRAINPERCENT.
+----DRAIN decreases mana by a raw number of Cost. Incompatible with ADD and ADDPERCENT.
+----DRAINPERCENT decreases mana as a percent of max mana. Incompatible with ADD and ADDPERCENT.
+
+-Weapons only:
+
+{
+	RSMana:{
+		StrikeGain:true,
+		StrikeDrain:true,
+	}
+}
+
+--Can have the same parameters as Items, but additionally can have these two.
+--StrikeGain: Can be set as below to regenerate mana based on damage. This will ignore things like Type and Drain.
+--StrikeDrain: Can be set the same as below to drain mana from enemies based on damage. This will ignore things like Type and Drain.
+
+-Custom Items:
+The same as above, you can set custom Mana-changing items with the custom keyword "RSMana".
+Then, set the custom parameters like so:
+
+{
+    RSMana:{
+        Gain: 20,
+        Type: 'ADD'
+    }
+}
+
+Just like regular items, you can set Gain, Cost, and Type. It just shows custom info about it being a mana-specific item as the item type.
+
+This plugin should be fully compatible with AI. If you notice anything amiss, please contact me.
+
+-Dawn Elaine, July 10th, 2020.
+
+*Update, October, 2022:
++Added Strike Drain for weapons
++Added proper Mana parameter for level up display
++Bugfixed the code
++Unified class & unit custom parameters
++Wrote readme file
++Wrote proper instructions
