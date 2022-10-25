@@ -91,18 +91,32 @@ var RS_ManaControl = {
 	setupUnit: function (unit) {
 		var cls = unit.getClass()
 		if (typeof unit.custom.RSMana === 'object' && typeof unit.custom.RSMana.Max === 'number') {
+			root.log("hi");
 			unit.custom.RSMana.Current = Number(unit.custom.RSMana.Max)
 		}
-		else {
+		else if (typeof unit.custom.RSMana !== "object"){
 			var manatest = cls.custom.RSMana
+			var unitManaTest = unit.custom.RSMana;
 			if (typeof manatest === 'object' && typeof cls.custom.RSMana.Max === 'number') {
-				unit.custom.RSMana = {}
-				unit.custom.RSMana.Cap = typeof manatest.Cap === "number" ? manatest.Cap : this._defaultCap;
-				unit.custom.RSMana.Increment = typeof manatest.Increment === "number" ? manatest.Increment : this._defaultInc;
-				unit.custom.RSMana.Max = typeof manatest.Max === "number" ? Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv() - 1))) : Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1)));
+				if (typeof unitManaTest !== "object"){
+					unit.custom.RSMana = {}
+				}
+				if (typeof unitManaTest.Cap !== "number"){
+					unit.custom.RSMana.Cap = typeof manatest.Cap === "number" ? manatest.Cap : this._defaultCap;
+				}
+				if (typeof unitManaTest.Increment !== "number"){
+					unit.custom.RSMana.Increment = typeof manatest.Increment === "number" ? manatest.Increment : this._defaultInc;
+				}
+				if (typeof unitManaTest.Max !== "number"){
+					unit.custom.RSMana.Max = typeof manatest.Max === "number" ? Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv() - 1))) : Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1)));
+				}
 				unit.custom.RSMana.Current = unit.custom.RSMana.Max;
-				unit.custom.RSMana.Regen = typeof manatest.Regen === "object" ? manatest.Regen : ["PERCENT", this._defaultRegen];
-				unit.custom.RSMana.Cost = typeof manatest.Cost === "number" ? manatest.Cost : 0;
+				if (typeof unitManaTest.Regen !== "object"){
+					unit.custom.RSMana.Regen = typeof manatest.Regen === "object" ? manatest.Regen : ["PERCENT", this._defaultRegen];
+				}
+				if (typeof unitManaTest.Cost !== "number"){
+					unit.custom.RSMana.Cost = typeof manatest.Cost === "number" ? manatest.Cost : 0;
+				}
 			}
 			else {
 				cls.custom.RSMana = {
@@ -114,11 +128,12 @@ var RS_ManaControl = {
 					Increment: this._defaultInc,
 					Cap: this._defaultCap
 				}
-
-				unit.custom.RSMana = {
-					Max: cls.custom.RSMana.Max,
-					Current: cls.custom.RSMana.Max,
-					Regen: cls.custom.RSMana.Regen
+				if (typeof unit.custom.RSMana != 'object'){
+					unit.custom.RSMana = {
+						Max: cls.custom.RSMana.Max,
+						Current: cls.custom.RSMana.Max,
+						Regen: cls.custom.RSMana.Regen
+					}
 				}
 			}
 		}
@@ -744,12 +759,18 @@ ItemControl.decreaseLimit = function (unit, item) {
 var SpendManaTemp = SimulateMove._endMove;
 SimulateMove._endMove = function (unit) {
 	SpendManaTemp.call(this, unit);
-	var manaclass = typeof unit.getClass().custom.RSMana === 'object' ? unit.getClass().custom.RSMana : null
-	var manaskill = SkillControl.getPossessionCustomSkill(unit, "SaveManaMove")
+	var manaclass = typeof unit.getClass().custom.RSMana === 'object' ? unit.getClass().custom.RSMana : null;
+	var manaUnit = typeof unit.custom.RSMana === 'object' ? unit.custom.RSMana : null;
+	var manaskill = SkillControl.getPossessionCustomSkill(unit, "SaveManaMove");
 	if (manaclass != null) {
 		var manacopy = {}
 		manacopy.Type = manaclass.Type
-		manacopy.Cost = manaclass.Cost
+		if (manaUnit != null){
+			manacopy.Cost = typeof manaUnit.Cost === "number" ? manaUnit.Cost : manaclass.Cost;
+		}
+		else{
+			manacopy.Cost = manaclass.Cost;
+		}
 		if (manaskill && typeof manaskill.custom.RSMana === 'object') {
 			if (manaskill.custom.MoveSaveType.toUpperCase() === "PERCENT") {
 				manacopy.Cost = Math.round(manacopy.Cost * (manaskill.custom.MoveSave / 100))
