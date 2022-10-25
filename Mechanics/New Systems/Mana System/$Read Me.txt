@@ -91,5 +91,8 @@ This plugin should be fully compatible with AI. If you notice anything amiss, pl
 +Added proper Mana parameter for level up display
 +Bugfixed the code
 +Unified class & unit custom parameters
++Can set custom Mana name in global params
++AI is limited by mana for movement
++AI spends mana properly
 +Wrote readme file
 +Wrote proper instructions
