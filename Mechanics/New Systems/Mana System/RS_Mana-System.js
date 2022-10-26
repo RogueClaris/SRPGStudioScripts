@@ -111,30 +111,33 @@ var RS_ManaControl = {
 			var manatest = cls.custom.RSMana
 			var unitManaTest = unit.custom.RSMana;
 			if (typeof manatest === 'object' && typeof cls.custom.RSMana.Max === 'number') {
-				if (typeof unitManaTest !== "object"){
-					unit.custom.RSMana = {}
+				if (typeof unitManaTest != "object"){
+					unit.custom.RSMana = manatest;
 				}
-				if (typeof unitManaTest.Cap !== "number"){
-					unit.custom.RSMana.Cap = typeof manatest.Cap === "number" ? manatest.Cap : this._defaultCap;
-				}
-				if (typeof unitManaTest.Increment !== "number"){
-					unit.custom.RSMana.Increment = typeof manatest.Increment === "number" ? manatest.Increment : this._defaultInc;
-				}
-				if (typeof unitManaTest.Max !== "number"){
-					unit.custom.RSMana.Max = typeof manatest.Max === "number" ? Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv() - 1))) : Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1)));
-				}
-				unit.custom.RSMana.Current = unit.custom.RSMana.Max;
-				if (typeof unitManaTest.Regen !== "object"){
-					unit.custom.RSMana.Regen = typeof manatest.Regen === "object" ? manatest.Regen : ["PERCENT", this._defaultRegen];
-				}
-				if (typeof unitManaTest.Cost !== "number"){
-					unit.custom.RSMana.Cost = typeof manatest.Cost === "number" ? manatest.Cost : 0;
+				else{
+					if (typeof unitManaTest.Cap !== "number"){
+						unit.custom.RSMana.Cap = typeof manatest.Cap === "number" ? manatest.Cap : this._defaultCap;
+					}
+					if (typeof unitManaTest.Increment !== "number"){
+						unit.custom.RSMana.Increment = typeof manatest.Increment === "number" ? manatest.Increment : this._defaultInc;
+					}
+					if (typeof unitManaTest.Max !== "number"){
+						unit.custom.RSMana.Max = typeof manatest.Max === "number" ? Math.min(manatest.Cap, manatest.Max + (manatest.Increment * (unit.getLv() - 1))) : Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1)));
+						unit.custom.RSMana.Current = unit.custom.RSMana.Max;
+					}
+					if (typeof unitManaTest.Regen !== "object"){
+						unit.custom.RSMana.Regen = typeof manatest.Regen === "object" ? manatest.Regen : ["PERCENT", this._defaultRegen];
+					}
+					if (typeof unitManaTest.Cost !== "number"){
+						unit.custom.RSMana.Cost = typeof manatest.Cost === "number" ? manatest.Cost : 0;
+					}
 				}
 			}
 			else {
 				cls.custom.RSMana = {
 					Cost: 0,
 					Max: Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1))),
+					Current: Math.min(this._defaultCap, this._defaultMana + (this._defaultInc * (unit.getLv() - 1))),
 					Type: "DRAIN",
 					Regen: ["PERCENT", this._defaultRegen],
 					GrowthChance: this._defaultChance,
@@ -984,15 +987,24 @@ AttackEvaluator.HitCritical.evaluateAttackEntry = function (virtualActive, virtu
 };
 
 ContentRenderer.drawManaInfo = function (x, y, unit) {
-	var manacheck = typeof unit.custom.RSMana === 'object' ? unit.custom.RSMana : null
+	var manacheck = typeof unit.custom.RSMana === 'object' ? unit.custom.RSMana : null;
+	var manacheck2 = typeof unit.getClass().custom.RSMana === "object" ? unit.getClass().custom.RSMana : null;
 	y += 32
-	if (manacheck != null) {
+	if (manacheck != null || manacheck2 != null) {
+		var current = typeof manacheck.Current === "number" ? manacheck.Current : null;
+		if (current === null){
+			current = typeof manacheck2.Current === "number" ? manacheck2.Current : 0;
+		}
+		var max = typeof manacheck.Max === "number" ? manacheck.Max : null;
+		if (max === null){
+			max = typeof manacheck2.Max === "number" ? manacheck2.Max : 0;
+		}
 		var pic = root.queryUI('unit_gauge');
 		TextRenderer.drawSignText(x, y, UnitParameter.Mana.getParameterName());
-		NumberRenderer.drawNumber(x + 60, y, manacheck.Current);
+		NumberRenderer.drawNumber(x + 60, y, current);
 		TextRenderer.drawSignText(x + 70, y, '/');
-		NumberRenderer.drawRightNumber(x + 80, y, manacheck.Max);
-		this.drawGauge(x, y + 20, manacheck.Current, manacheck.Max, 1, 110, pic);
+		NumberRenderer.drawRightNumber(x + 80, y, max);
+		this.drawGauge(x, y + 20, current, max, 1, 110, pic);
 	}
 };
 
