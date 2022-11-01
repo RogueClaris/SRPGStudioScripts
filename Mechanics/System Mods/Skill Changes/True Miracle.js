@@ -23,6 +23,13 @@ AttackEvaluator.PassiveAction.evaluateAttackEntry = function(virtualActive, virt
 	
 	//call for compatibility, but...
 	TM000.call(this, virtualActive, virtualPassive, attackEntry);
+	
+	//well, we do stop if we don't have the skill, I guess.
+	var skill = SkillControl.getPossessionSkill(virtualPassive.unitSelf, SkillType.SURVIVAL)
+	if (skill === null || skill.custom.ImmortalCL === true){
+		return;
+	}
+	
 	//we're kinda just repeating the code orz
 	if (!attackEntry.isHit) {
 		return;
@@ -38,10 +45,6 @@ AttackEvaluator.PassiveAction.evaluateAttackEntry = function(virtualActive, virt
 		return;
 	}
 	
-	var skill = SkillControl.getPossessionSkill(virtualPassive.unitSelf, SkillType.SURVIVAL)
-	if (skill.custom.ImmortalCL === true){
-		return;
-	}
 	
 	if (value === SurvivalValue.SURVIVAL && virtualPassive.hp > 1) {
 		// Survive with HP1 by reducing 1 damage.
@@ -73,7 +76,7 @@ SkillRandomizer.isSkillInvoked = function(active, passive, skill) {
 	if (skilltype === SkillType.SURVIVAL && active.getHp() > 1) {
 		result = this._isSurvival(active, passive, skill);
 	}
-	else{
+	else if (skilltype === SkillType.SURVIVAL && active.getHp() === 1){
 		return false;
 	}
 	
