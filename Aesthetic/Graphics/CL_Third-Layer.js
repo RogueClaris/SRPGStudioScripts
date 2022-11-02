@@ -2,9 +2,7 @@
   Usage instruction:
   Go into the terrain tab of database, and set the following custom parameters,
   
-  {
-	  StealthCL:true
-  }
+  {StealthCL:true}
   
   I was able to make this by modifying a plugin created by SapphireSoft,
   "highlevel-outside.js". It causes terrain with the right custom parameters
@@ -24,19 +22,28 @@
   
   Adapted Plugin History:
   2020/10/05 Released
-  
+
+  2022/11/02 Update
+	No longer leaves old map layer artifacts on the next map.
+ 	Overrides the following commands for Quality of Life visual concerns:
+	  AfterTransitionFlowEntry._completeMemberData;
+	  BeforeTransitionFlowEntry._completeMemberData;
+	
   
 --------------------------------------------------------------------------*/
 
 (function() {
 var alias3 = MapLayer.drawUnitLayer;
 MapLayer.drawUnitLayer = function() {
+	alias3.call(this);
 	var i, j;
 	var session = root.getCurrentSession();
 	var mx = session.getScrollPixelX();
 	var my = session.getScrollPixelY();
-	if (root.getMetaSession().global.ThirdLayerArray == null || this._mx !== mx || this._my !== my){
+	if (root.getMetaSession().global.ThirdLayerArray == null){
 		root.getMetaSession().global.ThirdLayerArray = []
+	}
+	if (this._mx !== mx || this._my !== my){
 		for (i = 0; i < CurrentMap.getWidth(); i++){
 			for (j = 0; j < CurrentMap.getHeight(); j++){
 				var Terrain = PosChecker.getTerrainFromPos(i, j)
@@ -57,7 +64,6 @@ MapLayer.drawUnitLayer = function() {
 			}
 		}
 	}
-	alias3.call(this);
 	var t;
 	var arr = root.getMetaSession().global.ThirdLayerArray
 	for (t = 0; t < arr.length; ++t){
@@ -79,7 +85,47 @@ UnitRenderer.drawScrollUnit = function(unit, x, y, unitRenderParam) {
 var EraseArrCL = ScriptCall_Load;
 ScriptCall_Load = function(){
 	EraseArrCL.call(this);
-	delete root.getMetaSession().global.ThirdLayerArray
+	if (root.getMetaSession().global.ThirdLayerArray != null){
+		delete root.getMetaSession().global.ThirdLayerArray
+	}
+}
+
+var EraseMapLayerCL1 = SystemTransition.initialize;
+SystemTransition.initialize = function(){
+	EraseMapLayerCL1.call(this);
+	if (root.getMetaSession().global.ThirdLayerArray != null && root.getCurrentScene() === SceneType.BATTLESETUP){
+		delete root.getMetaSession().global.ThirdLayerArray
+	}
+}
+
+AfterTransitionFlowEntry._completeMemberData = function(battleResultScene) {
+	if (SceneManager.isScreenFilled()) {
+		return EnterResult.NOTENTER;
+	}
+	
+	this._transition.setFadeSpeed(5);
+	this._transition.setEffectRangeType(EffectRangeType.ALL);
+	this._transition.setVolume(255, 0, 160, true);
+	
+	return EnterResult.OK;
+}
+
+BeforeTransitionFlowEntry._completeMemberData = function(battleResultScene) {
+	var effect;
+	
+	if (SceneManager.isScreenFilled()) {
+		// If it's EffectRangeType.ALL, the characters on the "logo" are all covered,
+		// so change it to EffectRangeType.ALL.
+		effect = root.getScreenEffect();
+		effect.setRange(EffectRangeType.ALL);
+		return EnterResult.NOTENTER;
+	}
+	
+	this._transition.setFadeSpeed(5);
+	this._transition.setEffectRangeType(EffectRangeType.ALL);
+	this._transition.setVolume(160, 0, 0, true);
+	
+	return EnterResult.OK;
 }
 
 })();
