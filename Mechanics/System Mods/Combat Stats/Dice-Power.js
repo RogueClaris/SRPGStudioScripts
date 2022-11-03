@@ -1,49 +1,67 @@
+var DicePowerCompatibilityCL0 = AbilityCalculator.getPower;
 AbilityCalculator.getPower = function(unit, weapon) {
-	var pow = 0;
+	var pow = DicePowerCompatibilityCL0.call(this, unit, weapon) - weapon.getPow();
 	var dice = weapon.custom.dice != null ? weapon.custom.dice : 1
 	var damage = weapon.custom.damage != null ? weapon.custom.damage : 4
 	var bonus = weapon.custom.bonus != null ? weapon.custom.bonus : weapon.getPow();
-	
 	for (i = 0; i < dice; i++){
-		pow += Math.round(Math.random()*(damage+1));
+		pow += Math.round(Math.random()*(damage));
 	};
 	// Atk formula. Weapon pow + (Pow or Mag)
 	return pow + bonus;
 };
 
 StatusRenderer.drawAttackStatus = function(x, y, arr, color, font, space) {
-	var i, text;
 	var length = this._getTextLength();
 	var numberSpace = DefineControl.getNumberSpace();
-	var buf = ['attack_capacity', 'hit_capacity', 'critical_capacity'];
+	x -= 8
+	//draw attack keyword.
+	TextRenderer.drawKeywordText(x, y, root.queryCommand('attack_capacity'), length, color, font);
 	
-	for (i = 0; i < 3; i++) {
-		text = root.queryCommand(buf[i]);
-		if (buf[i] === 'attack_capacity'){
-			TextRenderer.drawKeywordText(x, y, text, length, color, font);
-			x += 28
-			if (typeof arr[i] === 'string'){
-				TextRenderer.drawText(x,y+3,arr[i],length,0xffffff,font);
-			}
-			else{
-				TextRenderer.drawSignText(x - 5, y, StringTable.SignWord_Limitless);
-			}
-			x += 28 + numberSpace;
-		}
-		else{
-			TextRenderer.drawKeywordText(x, y, text, length, color, font);
-			x += 28 + numberSpace;
-			
-			if (arr[i] >= 0) {
-				NumberRenderer.drawNumber(x, y, arr[i]);
-			}
-			else {
-				TextRenderer.drawSignText(x - 5, y, StringTable.SignWord_Limitless);
-			}
-			
-			x += space;
-		}
+	//increase x.
+	x += 28
+
+	if (typeof arr[0] === 'string'){
+		//draw attack dice.
+		TextRenderer.drawText(x,y+3,arr[0],length,ColorValue.DEFAULT,font);
 	}
+	else{
+		//draw limitless sign word if the weapon has no dice, somehow.
+		TextRenderer.drawSignText(x + 22, y, StringTable.SignWord_Limitless);
+	}
+
+	x += space + 48
+
+	//draw hit keyword
+	TextRenderer.drawKeywordText(x, y, root.queryCommand('hit_capacity'), length, color, font);
+	
+	//increase x.
+	x += 23 + numberSpace;
+	
+	//draw critical or limitless
+	if (arr[2] >= 0) {
+		NumberRenderer.drawNumber(x, y, arr[1]);
+	}
+	else {
+		TextRenderer.drawSignText(x - 8, y, StringTable.SignWord_Limitless);
+	}
+	
+	x += space
+	
+	//draw critical keyword
+	TextRenderer.drawKeywordText(x, y, root.queryCommand('critical_capacity'), length, color, font);
+	
+	//increase x.
+	x += 23 + numberSpace;
+
+	//draw critical or limitless
+	if (arr[2] >= 0) {
+		NumberRenderer.drawNumber(x, y, arr[2]);
+	}
+	else {
+		TextRenderer.drawSignText(x - 10, y, StringTable.SignWord_Limitless);
+	}
+	
 };
 
 AttackChecker.getAttackStatusInternal = function(unit, weapon, targetUnit) {
@@ -56,8 +74,8 @@ AttackChecker.getAttackStatusInternal = function(unit, weapon, targetUnit) {
 	
 	var dice = weapon.custom.dice != null ? weapon.custom.dice : 1
 	var damage = weapon.custom.damage != null ? weapon.custom.damage : 4
-	var bonus = weapon.custom.bonus != null ? weapon.custom.bonus : weapon.getPow();
-	
+	var bonus = DicePowerCompatibilityCL0.call(this, unit, weapon);
+
 	activeTotalStatus = SupportCalculator.createTotalStatus(unit);
 	passiveTotalStatus = SupportCalculator.createTotalStatus(targetUnit);
 	
@@ -122,7 +140,7 @@ BaseUnitSentence.drawAbilityText = function(x, y, text, value, isValid) {
 	
 	if (isValid) {
 		if (typeof value === 'string'){
-			TextRenderer.drawText(x,y,value,30,0x40bfff,font);
+			TextRenderer.drawText(x,y+2,value,30,0xB7CCDD,font);
 		}
 		else{	
 			if (value < 0) {
@@ -143,7 +161,7 @@ UnitSentence.Power.drawUnitSentence = function(x, y, unit, weapon, totalStatus) 
 	if (weapon !== null) {
 		var dice = weapon.custom.dice != null ? weapon.custom.dice : 1
 		var damage = weapon.custom.damage != null ? weapon.custom.damage : 4
-		var bonus = weapon.custom.bonus != null ? weapon.custom.bonus : weapon.getPow();
+		var bonus = DicePowerCompatibilityCL0.call(this, unit, weapon);
 		
 		value = dice.toString()+"d"+damage.toString()+"+"+bonus.toString()
 		
