@@ -546,7 +546,6 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 
 		_getPointMax: function (unit, i) {
 			var Cost = this._getCost(unit, i);
-			var remainder = 0;
 			if (Cost <= 0) {
 				return -1;
 			}
@@ -579,12 +578,12 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		},
 
 		_setUnit: function (unit) {
-			if (this._activeIndex === -1) {
+			if (this._activeUnitIndex === -1) {
 				var list = PlayerList.getAliveList()
 				var count = list.getCount();
 				for (i = 0; i < count; i++) {
 					if (list.getData(i) === unit) {
-						this._activeIndex = i;
+						this._activeUnitIndex = i;
 						break;
 					}
 				}
