@@ -16,7 +16,8 @@ To use, do the following:
 	SummonedText:"Daniel",
 	RS_SummonCost:#, 
 	RS_SummonPercent:true,
-	RandomAmount:5
+	RandomAmount:5,
+	MatchSummonLevel:true
 }
 
 UnitID is necessary, where # is the ID of the Player you are copying from the Database.
@@ -37,6 +38,9 @@ to 5. This will summon 0-5 additional units.
 
 SummonedText is optional. It will be displayed on the item as "Summoned", showing what it brings
 to the map.
+
+MatchSummonLevel is also optional, but if explicitly set to true, it will set the level of summoned units
+to the level of the summoner, using their growths to adjust stats.
 
 That should be everything. Please enjoy the script.
 -Rogue Claris, May 20th, 2021 (Updated)
@@ -338,11 +342,15 @@ var SummonItemUse = defineObject(BaseItemUse,
 		this._targetUnit.setMapY(this._targetPos.y);
 		this._targetUnit.setInvisible(false);
 		var generator = root.getEventGenerator()
+		var item = this._itemUseParent.getItemTargetInfo().item
 		if (this._unit.getUnitType() !== UnitType.PLAYER){
 			generator.unitAssign(this._targetUnit, this._unit.getUnitType())
 		}
-		if (typeof this._itemUseParent.getItemTargetInfo().item.custom.RandomAmount === 'number'){
-			var item = this._itemUseParent.getItemTargetInfo().item
+		var levelDiff = this._unit.getLv() - 1;
+		if (item.custom.MatchSummonLevel === true){
+			generator.experiencePlusEx(this._targetUnit, levelDiff, ExperiencePlusType.LEVEL, true)
+		}
+		if (typeof item.custom.RandomAmount === 'number'){
 			var extraSummons = Math.floor(Math.random()*item.custom.RandomAmount)
 			var i = 0;
 			var unit, pos;
@@ -355,6 +363,9 @@ var SummonItemUse = defineObject(BaseItemUse,
 					unit.setMapY(pos.y);
 					unit.setInvisible(false);
 					generator.unitAssign(unit, this._unit.getUnitType())
+					if (item.custom.MatchSummonLevel === true){
+						generator.experiencePlusEx(unit, levelDiff, ExperiencePlusType.LEVEL, true)
+					}
 				}
 				++i;
 			}
