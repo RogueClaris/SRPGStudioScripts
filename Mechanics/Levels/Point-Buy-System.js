@@ -44,7 +44,7 @@ var CostGetter = {
 		}
 		var Cost = Math.round((100 - Growth) / 10);
 		if (Cost <= 0) {
-			return -1;
+			return 1;
 		}
 		return Cost;
 	}
