@@ -36,6 +36,20 @@ Enjoy this script!
 
 */
 
+var CostGetter = {
+	_getCost: function (unit, i) {
+		var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, i, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, i);
+		while (Growth > 100){
+			Growth -= 100;
+		}
+		var Cost = Math.round((100 - Growth) / 10);
+		if (Cost <= 0) {
+			return -1;
+		}
+		return Cost;
+	}
+}
+
 var RSPBS0 = MarshalCommandWindow._configureMarshalItem;
 MarshalCommandWindow._configureMarshalItem = function (groupArray) {
 	RSPBS0.call(this, groupArray)
@@ -105,7 +119,7 @@ MarshalCommand.SpendPoints = defineObject(MarshalBaseCommand,
 		},
 
 		getCommandName: function () {
-			return 'Customize';
+			return 'Learn';
 		},
 
 		isMarshalScreenCloesed: function () {
@@ -181,11 +195,11 @@ var PointBuyScreen = defineObject(BaseScreen,
 			this._paramWindow.moveCursor();
 			var unit;
 			if (InputControl.isSelectAction()) {
-				if (!this._inputWindow.checkMax(this._paramWindow._scrollbar.getIndex())){
+				if (!this._inputWindow.checkMax(this._paramWindow._scrollbar.getIndex())) {
 					MediaControl.soundPlay(root.querySoundHandle('operationblock'))
 					return MoveResult.CONTINUE;
 				}
-				if (!this._inputWindow.checkCost(this._paramWindow._scrollbar.getIndex())){
+				if (!this._inputWindow.checkCost(this._paramWindow._scrollbar.getIndex())) {
 					MediaControl.soundPlay(root.querySoundHandle('operationblock'))
 					return MoveResult.CONTINUE;
 				}
@@ -229,6 +243,9 @@ var PointBuyScreen = defineObject(BaseScreen,
 		},
 
 		changeUnit: function (unit) {
+			if (this._unit != null) {
+				MediaControl.soundDirect('menutargetchange');
+			}
 			this._unit = unit;
 			this._inputWindow._setUnit(this._unit);
 			this._viewWindow._setUnit(this._unit);
@@ -322,15 +339,6 @@ var ParameterWindow = defineObject(BaseWindow,
 
 		getWindowHeight: function () {
 			return (10 * 25) + 10;
-		},
-
-		_getCost: function (unit, i) {
-			var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, i, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, i);
-			var Cost = Math.round((100 - Growth) / 10);
-			if (Cost <= 0) {
-				return -1;
-			}
-			return Cost;
 		}
 	}
 );
@@ -354,28 +362,19 @@ var ParameterScrollbar = defineObject(ItemListScrollbar,
 			this.setObjectArray(array);
 		},
 
-		_getCost: function (unit, i) {
-			var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, i, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, i);
-			var Cost = Math.round((100 - Growth) / 10);
-			if (Cost <= 0) {
-				return -1;
-			}
-			return Cost;
-		},
-
 		drawScrollContent: function (x, y, object, isSelect, index) {
 			var type = object.getParameterType()
 			var unit = this._unit
-			if (!this._unit.custom.QoLPointBuyArrayCL){
+			if (!this._unit.custom.QoLPointBuyArrayCL) {
 				this._unit.custom.QoLPointBuyArrayCL = {}
-				for (var i = 0; i < ParamGroup.getParameterCount(); i++){
+				for (var i = 0; i < ParamGroup.getParameterCount(); i++) {
 					this._unit.custom.QoLPointBuyArrayCL[i] = 0;
 				}
 			}
 			var font = root.getBaseData().getFontList().getData(0)
 			var amount = ParamGroup.getUnitValue(unit, type)
 			var max = ParamGroup.getMaxValue(unit, type)
-			var cost = this._getCost(unit, type)
+			var cost = CostGetter._getCost(unit, type)
 			var isMax = amount >= max
 			TextRenderer.drawText(x, y, object.getParameterName() + ":", -1, ColorValue.KEYWORD, font)
 			if (!isMax && cost !== -1) {
@@ -436,7 +435,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		},
 
 		checkCost: function (i) {
-			var cost = this._getCost(this._unit, i)
+			var cost = CostGetter._getCost(this._unit, this._param);
 			var Points = this._unit != null ? this._unit.custom.StatPoints : null
 			if (typeof Points !== 'number') {
 				Points = 0
@@ -449,10 +448,10 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		},
 
 		_moveInput: function () {
-			var cost = this._getCost(this._unit, this._param);
+			var cost = CostGetter._getCost(this._unit, this._param);
 			this._max = this._getPointMax(this._unit, this._param)
 			this._costMax = this._getCostMax(this._unit, this._param)
-			
+
 			//attempted to add holding for pad input but it was very slippery.
 			//might request SRPG Studio devs add support natively for this kind of window,
 			//or a delay based check be native to the engine.
@@ -528,7 +527,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		},
 
 		_getCostMax: function (unit, i) {
-			var Cost = this._getCost(unit, i);
+			var Cost = CostGetter._getCost(unit, i);
 			var remainder = 0;
 			if (Cost <= 0) {
 				return -1;
@@ -537,7 +536,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 			var maxValue = ParamGroup.getMaxValue(unit, i);
 			var difference = maxValue - currentValue;
 			var value = difference * Cost
-			if (value > unit.custom.StatPoints){
+			if (value > unit.custom.StatPoints) {
 				value = unit.custom.StatPoints;
 				remainder = unit.custom.StatPoints % Cost
 			}
@@ -545,7 +544,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 		},
 
 		_getPointMax: function (unit, i) {
-			var Cost = this._getCost(unit, i);
+			var Cost = CostGetter._getCost(unit, i);
 			if (Cost <= 0) {
 				return -1;
 			}
@@ -553,11 +552,11 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 			var maxValue = ParamGroup.getMaxValue(unit, i);
 			var difference = maxValue - currentValue;
 			var value = difference * Cost;
-			if (value > unit.custom.StatPoints){
+			if (value > unit.custom.StatPoints) {
 				value = unit.custom.StatPoints;
 				remainder = unit.custom.StatPoints % Cost
 			}
-			return Math.floor(value / Cost)
+			return Math.round(value / Cost)
 		},
 
 		_drawInput: function (x, y) {
@@ -566,7 +565,7 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 
 		_isExperienceValueAvailable: function () {
 			var Points = this._unit != null ? this._unit.custom.StatPoints : 0
-			var cost = this._getCost(this._unit, this._param)
+			var cost = CostGetter._getCost(this._unit, this._param);
 			if (cost === -1) {
 				return false;
 			}
@@ -617,15 +616,6 @@ var PointBuyWindow = defineObject(BonusInputWindow,
 				this._unit.custom.StatPoints = 0
 			}
 			this._cancelExp()
-		},
-
-		_getCost: function (unit, i) {
-			var Growth = ParamGroup.getUnitTotalGrowthBonus(unit, i, ItemControl.getEquippedWeapon(unit)) + ParamGroup.getGrowthBonus(unit, i);
-			var Cost = Math.round((100 - Growth) / 10);
-			if (Cost <= 0) {
-				return -1;
-			}
-			return Cost;
 		}
 	}
 );

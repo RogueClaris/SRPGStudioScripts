@@ -85,7 +85,7 @@ Plugin released.
 				this._dynamicEvent = createObject(DynamicEvent);
 
 				var gen = this._dynamicEvent.acquireEventGenerator();
-
+				//implement global parameter check exclusion
 				if (levelupViewParam.targetUnit.custom.ExpressionListCL == false) {
 					gen.messageShowUnit(this.getRelevantLevelUpMessage(), MessagePos.BOTTOM, this._targetUnit);
 				}
