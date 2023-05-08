@@ -88,6 +88,7 @@ ExperienceControl._createGrowthArray = function(unit) {
 		//check progress. If stat is currently at max, it's 0.
 		//otherwise, subtract current from max.
 		StatProgress = StatCur < max ? max - StatCur : 0
+		root.log(StatProgress);
 		//if it's not a banned stat...
 		if (BannedStats.indexOf(StatName) === -1){
 			//check if the level difference is 0.
