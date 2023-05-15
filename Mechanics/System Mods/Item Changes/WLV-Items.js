@@ -1,7 +1,11 @@
 var WLVI0 = ItemControl.isItemUsable
 ItemControl.isItemUsable = function(unit, item) {
 	var result = WLVI0.call(this, unit, item);
-	var req = typeof item.custom.wlvReq == 'number' ? item.custom.wlvReq : 0
+	// If we already can't use the item, don't let weapon level override.
+	if (!result){
+		return result;
+	}
+	// If the item isn't a weapon, check if weapon level would let us use it.
 	if (!item.isWeapon()){
 		result = this._isWeaponLevel(unit, item)
 	}
