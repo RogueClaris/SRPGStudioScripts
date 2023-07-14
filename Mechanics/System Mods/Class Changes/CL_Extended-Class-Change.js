@@ -10,10 +10,10 @@ ClassChangeSelectManager._checkGroup = function(unit, item) {
 	var group = ResetClassCountCL0.call(this, unit, item);
 	var cls = unit.getClass()
 	if (unit.custom.InfiniteChangeCL){
-		unit.setClassUpCount(0)
+		unit.setClassUpCount(0);
 	}
 	else if (cls.custom.NegateChangeCostCL){
-		unit.setClassUpCount(unit.getClassUpCount()-1)
+		unit.setClassUpCount(unit.getClassUpCount()-1);
 	}
 	return group;
 }

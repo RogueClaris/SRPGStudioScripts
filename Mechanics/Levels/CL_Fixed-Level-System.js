@@ -42,82 +42,86 @@ October 28th, 2020:
 */
 
 var CLFixed0 = ExperienceControl._createGrowthArray;
-ExperienceControl._createGrowthArray = function(unit) {
-	if (unit.custom.RandomLevelsCL){
-		CLFixed0.call(this, unit);
+ExperienceControl._createGrowthArray = function (unit) {
+	if (unit.custom.RandomLevelsCL) {
+		return CLFixed0.call(this, unit);
 	}
-	var i, n, max, StatProgress, StatCur, StatName;
+	var i, boost, max, StatProgress, StatCur, StatName, percent;
+	var StatListCL = unit.custom.MaxStatsCL;
+	var unitClass = unit.getClass()
+	if (unitClass.custom.PreferClassMaxCL || StatListCL == null){
+		StatListCL = unitClass.custom.MaxStatsCL
+	}
 	//only do the first 11 parameters, as some plugins add parameters that are not compatible, such as weapon ranks.
-	var count = 11;
+	var count = 10;
 	var growthArray = [];
 	//get the precentage progress of unit's current level to max level.
 	var LvProgress = unit.getLv() / Miscellaneous.getMaxLv(unit)
 	//get the difference in current level and max level.
-	var LvDiff = Miscellaneous.getMaxLv(unit) - unit.getLv()
+	var LvDiff = (Miscellaneous.getMaxLv(unit) - unit.getLv())
 	//add non-increasing stat names to this, separated by commas.
 	//this stops these stats from increasing regardless of levelups.
-	var StatNameArray = ['HP', 'Str', 'Mag', 'Skl', 'Spd', 'Lck', 'Def', 'Res', 'Mov', 'Wlv', 'Bld'];
-	var BannedStats = ["Mov","Bld"]
+	var StatNameArray = ["HP", "Str", "Mag", "Skl", "Spd", "Lck", "Def", "Res", "Mov", "Wlv", "Bld"];
+	var BannedStats = unit.custom.BannedStats != null ? unit.custom.BannedStats : ["Mov", "Bld"];
 	//check custom parameters of unit
 	//loop over count
 	for (i = 0; i < count; i++) {
-		StatName = StatNameArray[i]
-		//This is...complicated, so bear with me. This code is supposed to...
-		//1) check if custom param value is undefined, null, or neither.
-		//2) if undefined or null, max is 0.
-		//3) if neither, check if the custom param max is less than the in-engine max.
-		//4) if custom parameter max is less than the in-engine max, set it to custom parameter max.
-		//5) otherwise, use in-engine max.
-		// check if unit has custom object MaxStatsCL
-		if (unit.custom.MaxStatsCL != null){
-			// set as max, unless it's greater than max possible value
-			if (unit.custom.MaxStatsCL[StatName] && unit.custom.MaxStatsCL[StatName] <= ParamGroup.getMaxValue(unit, i)){
-				max = unit.custom.MaxStatsCL[StatName]
-			}
-			// if greater than max, set to 0
-			else{
-				max = 0
-			}
-		// if not defined, use the max value
+		// Make sure to redefine the boost variable each time so as not to repeat bonuses to stats incorrectly
+		boost = 0;
+		// Get the name
+		StatName = StatNameArray[i];
+		if (StatListCL[StatName] < 1) {
+			continue;
 		}
-		else{
-			max = ParamGroup.getMaxValue(unit, i)
-		}
-		//get the current stat amount.
-		StatCur = ParamGroup.getUnitValue(unit, i)
-		//check progress. If stat is currently at max, it's 0.
-		//otherwise, subtract current from max.
-		StatProgress = StatCur < max ? max - StatCur : 0
-		//if it's not a banned stat...
-		if (BannedStats.indexOf(StatName) === -1){
-			//check if the level difference is 0.
-			//this means this is the final level up,
-			//and the system needs to max out your stats.
-			if (LvDiff === 0){
-				//set the difference equal to what is required to max out.
-				n = max-StatCur
+		// and if it's not a banned stat...
+		if (BannedStats.indexOf(StatName) === -1) {
+			max = Math.min(StatListCL[StatName], ParamGroup.getMaxValue(unit, i))
+
+			// get the current stat amount.
+			StatCur = ParamGroup.getUnitValue(unit, i);
+
+			//check progress. If stat is currently at max, it's 0.
+			//otherwise, subtract current from max.
+			StatProgress = StatCur < max ? max - StatCur : 0
+
+			// check if the level difference is 0.
+			// as this means this is the final level up,
+			// and the system needs to max out your stats.
+			if (LvDiff == 0) {
+				// set the difference equal to what is required to max out.
+				// ensure a check so that we don't lose stats somehow.
+				boost = Math.max(0, max - StatCur);
 			}
-			else{
+			else {
+				percent = Math.round(StatProgress / LvDiff);
+				if (percent < 1) {
+					continue;
+				}
+				percent = percent / 100
 				//complicated. bear with me. this is supposed to...
 				//1) Round up the difference between max and current stat...
 				//1a) ...as affected by the unit's progress from current level to max level.
 				//2) Round up after dividing the stat max by the max level.
 				//3) Choose the smaller number between the two.
-				n = Math.min(Math.ceil(max / Miscellaneous.getMaxLv(unit)), Math.ceil(StatProgress * LvProgress))
+				boost = Math.max(1, Math.round(max * percent));
 			}
 		}
-		else{
-			//if it's banned it's 0. the end.
-			n = 0;
-		}
 		//set it.
-		growthArray[i] = n;
+		growthArray[i] = boost;
+	}
+	// Do one final round of checks to ensure null entries are set to 0 instead of null
+	// Avoids a crash, and adds needed functionality to the plugin
+	// Effectively allows for levels to skip a stat if it was higher at base and thus doesn't need to be raised this level.
+	for (var check = 0; check < growthArray.length; check++){
+		if (growthArray[check] == null){
+			growthArray[check] = 0;
+		}
 	}
 	//return it.
 	return growthArray;
 };
 
-RestrictedExperienceControl.obtainExperience = function(unit, getExp) {
+RestrictedExperienceControl.obtainExperience = function (unit, getExp) {
 	//call the above function instead of executing this one one.
 	if (!ExperienceControl._addExperience(unit, getExp)) {
 		return null;
