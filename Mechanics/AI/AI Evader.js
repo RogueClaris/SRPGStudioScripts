@@ -1,27 +1,27 @@
+// This will cause the CPU characters to determine a weapon to attack with where the enemy cannot counter.
 var AIECL0 = AIScorer.Weapon._getTotalScore;
-AIScorer.Weapon._getTotalScore = function(unit, combination) {
-	//call and get the original score.
+AIScorer.Weapon._getTotalScore = function (unit, combination) {
+	// Store the original AI score.
 	var score = AIECL0.call(this, unit, combination);
-	//comes in handy later.
-	var found = false;
-	//set loop count to zero.
-	var i = 0;
-	//get unit's weapon.
-	var unitWeapon = ItemControl.getEquippedWeapon(unit);
-	//get item count.
-	var count = UnitItemControl.getPossessionItemCount(unit);
-	//get target's weapon.
-	var targetWeapon = ItemControl.getEquippedWeapon(combination.targetUnit);
-	//if target is not undesirable and target is unarmed, nearly force targeting with +100 to score.
-	if (targetWeapon === null && score !== -1){
-		score += 100;
-		//immediately return score.
+
+	// Check for the relevant Skill.
+	var skill = SkillControl.getPossessionCustomSkill(unit, "CL-Evasive")
+
+	// Only activate if the skill is found OR the global parameters allow being adaptable.
+	var condition = skill != null || root.getMetaSession().global.AdaptableCL == true;
+	if (!condition) {
 		return score;
 	}
+
+	var unitWeapon; // for checking the weapon
+	var found = false; // for breaking the loop
+	var i = 0; // count how many loops to compare to item count
+	var count = UnitItemControl.getPossessionItemCount(unit); // amount of unit's items
+
 	//loop over until you find a weapon you can use that the enemy can't counter.
-	while (i < count && !found){
+	while (i < count && !found) {
 		//start by checking if it's a weapon.
-		if (unit.getItem(i).isWeapon()){
+		if (unit.getItem(i).isWeapon()) {
 			//if it is, equip it.
 			ItemControl.setEquippedWeapon(unit, unit.getItem(i));
 			//found is equal to the target being unable to counter.
@@ -29,8 +29,40 @@ AIScorer.Weapon._getTotalScore = function(unit, combination) {
 		}
 		++i
 	}
-	//the score is +10'd with the newly equipped weapon. weapon should be favored.
-	score += 10;
-	//return score.
+
+	// Increaes score because you found a weapon.
+	// Should make the weapon favored.
+	if (found) {
+		score += 10;
+	}
+
+	// Don't forget to return the score for use.
 	return score;
 };
+
+
+// This will cause the CPU characters to determine a weapon that they can counter with when being attacked.
+var AIECL1 = AttackChecker.isCounterattack;
+AttackChecker.isCounterattack = function (unit, targetUnit) {
+	// Obtain original result.
+	var result = AIECL1.call(this, unit, targetUnit);
+
+	// If we cannot counter...
+	if (!result) {
+		// Set up variables.
+		var itemCount = UnitItemControl.getPossessionItemCount(unit);
+		var found = false;
+
+		while (i < itemCount && !found) {
+			// Only check weapons.
+			if (unit.getItem(i).isWeapon()) {
+				// Determine if the weapon can counterattack the one attacking us.
+				found = AttackChecker.isCounterattackPos(unit, targetUnit, unit.getMapX(), unit.getMapY());
+				if (found) { ItemControl.setEquippedWeapon(unit, unit.getItem(i)); };
+			}
+			++i;
+		}
+	}
+
+	return result;
+}
