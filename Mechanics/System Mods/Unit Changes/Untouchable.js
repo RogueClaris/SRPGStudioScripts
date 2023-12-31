@@ -8,10 +8,10 @@ with "Untouchable".
 */
 
 var RSU0 = PosSelector.getSelectorTarget;
-PosSelector.getSelectorTarget = function(isIndexArray){
+PosSelector.getSelectorTarget = function (isIndexArray) {
 	var result = RSU0.call(this, isIndexArray);
-	if (result != null && SkillControl.getPossessionCustomSkill(result, "Untouchable")){
-		if (this._unit != null && SkillControl.getPossessionCustomSkill(this._unit, "Touchable")){
+	if (result != null && SkillControl.getPossessionCustomSkill(result, "Untouchable")) {
+		if (this._unit != null && SkillControl.getPossessionCustomSkill(this._unit, "Touchable")) {
 			return result;
 		}
 		return null;
@@ -20,23 +20,35 @@ PosSelector.getSelectorTarget = function(isIndexArray){
 }
 
 var RSU1 = FilterControl.isUnitTypeAllowed;
-FilterControl.isUnitTypeAllowed = function(unit, targetUnit){
+FilterControl.isUnitTypeAllowed = function (unit, targetUnit) {
 	var result = RSU1.call(this, unit, targetUnit);
 	var skill = SkillControl.getPossessionCustomSkill(targetUnit, "Untouchable")
 	var bypass = SkillControl.getPossessionCustomSkill(unit, "Touchable")
-	if (skill && !bypass){
+	if (skill && !bypass) {
 		return false;
 	}
 	return result;
 };
 
 var RSU2 = FilterControl.isReverseUnitTypeAllowed;
-FilterControl.isReverseUnitTypeAllowed = function(unit, targetUnit){
+FilterControl.isReverseUnitTypeAllowed = function (unit, targetUnit) {
 	var result = RSU2.call(this, unit, targetUnit);
 	var skill = SkillControl.getPossessionCustomSkill(targetUnit, "Untouchable")
 	var bypass = SkillControl.getPossessionCustomSkill(unit, "Touchable")
-	if (skill && !bypass){
+	if (skill && !bypass) {
 		return false;
 	}
 	return result;
 };
+
+var RSU3 = AIScorer.Weapon.getScore;
+AIScorer.Weapon.getScore = function (unit, combination) {
+	if (combination.targetUnit != null) {
+		var skill = SkillControl.getPossessionCustomSkill(combination.targetUnit, "Untouchable")
+		var bypass = SkillControl.getPossessionCustomSkill(unit, "Touchable");
+		if (skill && !bypass) {
+			return AIValue.MIN_SCORE;
+		}
+	}
+	return RSU3.call(this, unit, combination);
+}
