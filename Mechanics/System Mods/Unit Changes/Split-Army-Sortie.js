@@ -37,11 +37,11 @@ The commands are:
 
 ArmyControl.serialize()
 	-Run at the end of a map where you wish to change armies, during an Ending Event.
- 	This will empty the convoy of all items and mark them as belonging to the current
+	  This will empty the convoy of all items and mark them as belonging to the current
 	 Army. It should work during Base as well, as long as the Base is marked with a
- 	Custom Parameter:
- 		{Army:"text"}
- 	If this Custom Parameter matches the army you are currently playing, it will work.
+	  Custom Parameter:
+			{Army:"text"}
+	  If this Custom Parameter matches the army you are currently playing, it will work.
 
 ArmyControl.deserialize()
 	-Run at the beginning of a map where you have changed to the other army.
@@ -210,7 +210,7 @@ SortieSetting.setSortieMark = function (index) {
 	}
 }
 
-PlayerList.getAliveList = function(){
+PlayerList.getAliveList = function () {
 	var mapInfo = root.getCurrentSession().getCurrentMapInfo();
 	var restArea = root.getRestPreference().getActiveRestArea();
 	var army;
@@ -224,7 +224,7 @@ PlayerList.getAliveList = function(){
 			army = mapInfo.custom.Army;
 		}
 	}
-	if (typeof army == "string"){
+	if (typeof army == "string") {
 		return PlayerList.getArmyList(army);
 	}
 	return AllUnitList.getAliveList(this.getMainList());
@@ -248,7 +248,7 @@ var UnitDivisionStockControlCL2 = StockItemControl.pushStockItem;
 
 UnitItemControl.getItem = function (unit, index) {
 	var result = UnitDivisionStockControlCL0.call(this, unit, index);
-	if (typeof unit.custom.Army === "string" && result) {
+	if (unit != null && typeof unit.custom.Army === "string" && result) {
 		result.custom.Army = unit.custom.Army;
 	}
 	return result;
@@ -256,13 +256,13 @@ UnitItemControl.getItem = function (unit, index) {
 
 UnitItemControl.setItem = function (unit, index, item) {
 	UnitDivisionStockControlCL1.call(this, unit, index, item);
-	if (typeof unit.custom.Army === "string") {
+	if (item != null && unit != null && typeof unit.custom.Army === "string") {
 		item.custom.Army = unit.custom.Army;
 	}
 };
 
-StockItemControl.pushStockItem = function(item){
-	if (typeof item.custom.Army !== "string"){
+StockItemControl.pushStockItem = function (item) {
+	if (item != null && typeof item.custom.Army !== "string") {
 		var mapInfo = root.getCurrentSession().getCurrentMapInfo();
 		var restArea = root.getRestPreference().getActiveRestArea();
 		if (mapInfo === null) {
@@ -285,6 +285,9 @@ ArmyControl = {
 		var i, unit, item;
 		for (i = 0; i < List.getCount(); i++) {
 			unit = List.getData(i)
+			if (unit == null) {
+				continue;
+			}
 			if (unit.custom.Army !== null || unit.custom.Army !== undefined) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
 					item = UnitItemControl.getItem(unit, j);
@@ -302,6 +305,9 @@ ArmyControl = {
 		var i, unit, item;
 		for (i = 0; i < List.getCount(); i++) {
 			unit = List.getData(i)
+			if (unit != null) {
+				continue;
+			}
 			if (unit.custom.Army !== null || unit.custom.Army !== undefined) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
 					item = UnitItemControl.getItem(unit, j);
@@ -319,7 +325,7 @@ ArmyControl = {
 		var i, unit;
 		for (i = 0; i < List.getCount(); i++) {
 			unit = List.getData(i)
-			if (typeof unit.custom.RSBackupArmy == 'string' && unit.custom.RSBackupArmy == param) {
+			if (unit != null && typeof unit.custom.RSBackupArmy == 'string' && unit.custom.RSBackupArmy == param) {
 				for (j = 0; j < UnitItemControl.getPossessionItemCount(unit); j++) {
 					item = UnitItemControl.getItem(unit, j);
 					item.custom.Army = unit.custom.RSBackupArmy;
@@ -334,13 +340,13 @@ ArmyControl = {
 		var i, unit;
 		for (i = 0; i < List.getCount(); i++) {
 			unit = List.getData(i)
-			if (typeof unit.custom.RSBackupArmy == 'string') {
+			if (unit != null && typeof unit.custom.RSBackupArmy == 'string') {
 				unit.custom.Army = unit.custom.RSBackupArmy
 			}
 		}
 	},
 
-	WipeConvoy: function(){
+	WipeConvoy: function () {
 		root.getMetaSession().global.MainConvoyCL = [];
 		root.getMetaSession().global.SpareConvoyCL = [];
 	},
@@ -378,10 +384,10 @@ ArmyControl = {
 			arr.push(obj);
 		}
 
-		if (divided === true){
+		if (divided === true) {
 			root.getMetaSession().global.SpareConvoyCL = arr;
 		}
-		else{
+		else {
 			root.getMetaSession().global.MainConvoyCL = arr;
 		}
 
@@ -414,16 +420,16 @@ ArmyControl = {
 			}
 		}
 
-		if (divided === true){
+		if (divided === true) {
 			arr = globalCustom.SpareConvoyCL;
 		}
-		else{
+		else {
 			arr = globalCustom.MainConvoyCL;
 		}
-		if (arr == null){
+		if (arr == null) {
 			arr = [];
 		}
-		
+
 		while (1 && arr.length > 0) {
 			obj = arr[0];
 			if (obj.isWeapon) {
@@ -450,7 +456,7 @@ ArmyControl = {
 		}
 	},
 
-	mergeConvoy: function(){
+	mergeConvoy: function () {
 		var obj, item, newItem;
 		var arr = [];
 		var globalCustom = root.getMetaSession().global;
@@ -460,10 +466,10 @@ ArmyControl = {
 
 		arr = globalCustom.SpareConvoyCL;
 
-		if (arr == null){
+		if (arr == null) {
 			arr = [];
 		}
-		
+
 		while (1 && arr.length > 0) {
 			obj = arr[0];
 			if (obj.isWeapon) {
@@ -490,7 +496,7 @@ ArmyControl = {
 
 		arr = globalCustom.MainConvoyCL;
 
-		if (arr == null){
+		if (arr == null) {
 			arr = [];
 		}
 
